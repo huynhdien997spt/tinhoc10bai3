@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DATA LAB – Giải mã thế giới dữ liệu | Tin học – Bài 3</title>
+<style>
+/* =========================================================
+   DATA LAB – BÀI 3: MỘT SỐ KIỂU DỮ LIỆU VÀ DỮ LIỆU VĂN BẢN
+   Phần 1: BIẾN MÀU, NỀN, KHUNG TRANG
+   ========================================================= */
+:root{
+  --navy:#0d2440;         /* nền tối phòng lab */
+  --navy-2:#13324f;
+  --panel:#ffffff;
+  --panel-soft:#f3f8fb;
+  --cyan:#00b3c6;         /* màu chủ đạo */
+  --cyan-deep:#007f92;
+  --cyan-glow:rgba(0,179,198,.25);
+  --yellow:#ffc531;       /* nhấn mạnh */
+  --green:#18a361;        /* đúng */
+  --green-soft:#e4f7ee;
+  --red:#e0623f;          /* chưa đúng */
+  --red-soft:#fdeee9;
+  --ink:#10283f;
+  --ink-soft:#4e6577;
+  --line:#d8e4ec;
+  --radius:14px;
+  --shadow:0 10px 28px rgba(13,36,64,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,sans-serif;
+  color:var(--ink);
+  background:var(--navy);
+  font-size:16px;
+  line-height:1.55;
+  min-height:100vh;
+}
+.mono{font-family:"Cascadia Mono",Consolas,"DejaVu Sans Mono","Courier New",monospace}
+h1,h2,h3{line-height:1.2;margin:0 0 .4em}
+h2{font-size:1.6rem;letter-spacing:-.2px}
+h3{font-size:1.12rem}
+p{margin:.35em 0 .8em}
+button{font-family:inherit;font-size:1rem}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+/* nền bit 0/1 chạy nhẹ */
+#bitfield{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none;opacity:.16}
+.bitcol{position:absolute;top:-120%;color:#7fe6f2;font-size:14px;letter-spacing:3px;
+  writing-mode:vertical-rl;animation:fall linear infinite}
+@keyframes fall{from{transform:translateY(0)}to{transform:translateY(220vh)}}
+
+/* =========================================================
+   Phần 2: THANH TIẾN TRÌNH & HỒ SƠ HỌC SINH
+   ========================================================= */
+#topbar{position:sticky;top:0;z-index:40;background:rgba(9,27,48,.96);
+  border-bottom:1px solid rgba(127,230,242,.28);backdrop-filter:blur(6px)}
+.topwrap{max-width:1180px;margin:0 auto;padding:10px 18px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.brandmark{display:flex;align-items:center;gap:9px;color:#eaf7fb;font-weight:700;letter-spacing:.5px}
+.brandmark span.dot{width:11px;height:11px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 0 4px var(--cyan-glow)}
+.steps{display:flex;gap:6px;flex:1;min-width:280px;flex-wrap:wrap}
+.step{flex:1;min-width:76px;border:0;background:transparent;padding:4px 2px;cursor:default;text-align:left}
+.step .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.16);transition:background .3s}
+.step .lbl{font-size:10.5px;color:#9fc2d6;margin-top:5px;display:block;letter-spacing:.3px}
+.step.done .bar{background:var(--green)}
+.step.active .bar{background:var(--cyan);box-shadow:0 0 12px var(--cyan-glow)}
+.step.active .lbl{color:#eaf7fb;font-weight:700}
+.hud{display:flex;gap:14px;align-items:center;color:#d7ecf5;font-size:13px}
+.hud b{color:#fff}
+.xpchip{background:rgba(255,197,49,.15);border:1px solid rgba(255,197,49,.5);color:var(--yellow);
+  padding:3px 11px;border-radius:999px;font-weight:700}
+.iconbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#eaf7fb;
+  width:34px;height:34px;border-radius:9px;cursor:pointer}
+.iconbtn:hover{background:rgba(255,255,255,.18)}
+
+/* =========================================================
+   Phần 3: MÀN HÌNH, THẺ, NÚT
+   ========================================================= */
+main{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:22px 18px 110px}
+.screen{display:none;animation:in .35s ease both}
+.screen.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+.card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 24px;margin-bottom:18px}
+.card.soft{background:var(--panel-soft);border:1px solid var(--line);box-shadow:none}
+.mission-tag{display:inline-block;background:var(--navy);color:#9ff0fb;font-size:12px;font-weight:700;
+  padding:4px 12px;border-radius:999px;margin-bottom:8px;letter-spacing:.6px}
+.lead{color:var(--ink-soft);max-width:72ch}
+.qbox{border-left:5px solid var(--cyan);background:#effafc;padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0}
+.qbox strong{color:var(--cyan-deep)}
+
+.btn{background:var(--cyan);color:#04222a;border:0;padding:11px 20px;border-radius:10px;font-weight:700;cursor:pointer;
+  transition:transform .12s, box-shadow .2s;box-shadow:0 4px 0 var(--cyan-deep)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--cyan-deep)}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);box-shadow:none}
+.btn.dark{background:var(--navy);color:#bff3fb;box-shadow:0 4px 0 #061727}
+.btn.warn{background:var(--yellow);color:#4a3600;box-shadow:0 4px 0 #c08f00}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+
+input[type=text],textarea,select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;
+  font-family:inherit;font-size:15px;background:#fff;color:var(--ink)}
+textarea{min-height:76px;resize:vertical}
+input:focus,textarea:focus{border-color:var(--cyan);outline:none;box-shadow:0 0 0 3px var(--cyan-glow)}
+label.fld{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);margin:12px 0 5px}
+
+.feedback{margin-top:12px;padding:11px 14px;border-radius:10px;font-size:14.5px;display:none}
+.feedback.show{display:block}
+.feedback.ok{background:var(--green-soft);color:#0b6b40;border:1px solid #9fddc0}
+.feedback.no{background:var(--red-soft);color:#9c3b1d;border:1px solid #f0bda9}
+.feedback.hint{background:#fff6dd;color:#7a5600;border:1px solid #f0d693}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* =========================================================
+   Phần 4: WELCOME
+   ========================================================= */
+.hero{color:#eaf7fb;text-align:center;padding:26px 10px 6px}
+.hero h1{font-size:clamp(2.6rem,7vw,4.6rem);letter-spacing:-2px;margin:0;
+  background:linear-gradient(95deg,#8ef3ff,#ffffff 45%,var(--yellow));-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.hero .sub{font-size:clamp(1rem,2.2vw,1.35rem);color:#9ff0fb;letter-spacing:5px;margin-top:2px}
+.hero .lesson{color:#b9d4e4;margin-top:10px}
+.chain{display:flex;gap:10px;justify-content:center;align-items:center;margin:26px 0;flex-wrap:wrap}
+.chain .node{background:rgba(255,255,255,.07);border:1px solid rgba(143,235,247,.35);color:#eaf7fb;
+  padding:10px 18px;border-radius:12px;font-size:1.25rem;font-weight:700}
+.chain .node.bin{font-size:1.05rem;letter-spacing:2px;color:var(--yellow)}
+.chain .arw{color:var(--cyan);font-size:1.4rem;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+.typechips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.typechip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#dff1f8;
+  padding:7px 15px;border-radius:999px;font-size:14px}
+.signin{max-width:520px;margin:0 auto}
+.bigq{text-align:center;color:#eaf7fb;padding:30px 12px}
+.bigq .qt{font-size:clamp(1.3rem,3.4vw,2.1rem);font-weight:800;max-width:24ch;margin:0 auto;line-height:1.35}
+.bigq .qt em{font-style:normal;color:var(--yellow)}
+
+/* =========================================================
+   Phần 5: THẺ DIGITAL ID
+   ========================================================= */
+.idcard{background:linear-gradient(150deg,var(--navy),#1b4a6e);border-radius:18px;padding:20px;color:#eaf7fb;
+  box-shadow:var(--shadow);border:1px solid rgba(143,235,247,.3)}
+.idhead{display:flex;gap:14px;align-items:center;border-bottom:1px dashed rgba(255,255,255,.25);padding-bottom:12px;margin-bottom:12px}
+.avatar{width:58px;height:58px;border-radius:14px;background:linear-gradient(140deg,var(--cyan),#6ee7f5);
+  display:grid;place-items:center;font-size:30px}
+.idrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 11px;border-radius:10px;
+  background:rgba(255,255,255,.06);margin-bottom:8px;cursor:pointer;border:1px solid transparent;transition:.15s}
+.idrow:hover{background:rgba(255,255,255,.13);border-color:rgba(143,235,247,.45)}
+.idrow.answered{border-color:var(--cyan);background:rgba(0,179,198,.18)}
+.idrow .k{font-size:12.5px;color:#a9cede}
+.idrow .v{font-weight:700}
+.idrow .pick{font-size:12px;background:var(--cyan);color:#04222a;padding:2px 9px;border-radius:999px;font-weight:700}
+.idrow .pick.empty{background:rgba(255,255,255,.14);color:#cfe7f1}
+
+/* =========================================================
+   Phần 6: KÉO THẢ
+   ========================================================= */
+.cardpool{display:flex;flex-wrap:wrap;gap:9px;min-height:60px;padding:12px;border:2px dashed var(--line);
+  border-radius:12px;background:#fbfdfe}
+.dcard{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 13px;cursor:grab;
+  font-size:14.5px;box-shadow:0 2px 6px rgba(13,36,64,.07);user-select:none;transition:.15s}
+.dcard:hover{border-color:var(--cyan)}
+.dcard.picked{border-color:var(--cyan);background:#e6fafd;box-shadow:0 0 0 3px var(--cyan-glow)}
+.dcard.right{border-color:var(--green);background:var(--green-soft)}
+.dcard.right::after{content:" ✓";color:var(--green);font-weight:700}
+.dcard.wrong{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.zones{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+@media(max-width:900px){.zones{grid-template-columns:repeat(2,1fr)}}
+.zone{border:2px solid var(--line);border-radius:12px;padding:10px;background:#fff;min-height:150px}
+.zone h4{margin:0 0 8px;font-size:13.5px;letter-spacing:.4px;color:var(--cyan-deep);display:flex;gap:6px;align-items:center}
+.zone.over{border-color:var(--cyan);background:#effafc}
+.zone .drop{display:flex;flex-direction:column;gap:7px;min-height:90px}
+.tree{background:var(--navy);color:#cbeefb;padding:16px 20px;border-radius:12px;white-space:pre;overflow:auto}
+
+/* =========================================================
+   Phần 7: ASCII / UNICODE LAB
+   ========================================================= */
+.pipeline{display:flex;flex-direction:column;align-items:center;gap:6px;margin:10px 0}
+.pipeline .box{background:#fff;border:2px solid var(--cyan);border-radius:12px;padding:10px 26px;font-weight:700;font-size:1.5rem}
+.pipeline .box.small{font-size:1.1rem;border-color:var(--line)}
+.pipeline .down{color:var(--cyan);font-size:1.3rem}
+.bits{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.bit{width:40px;height:46px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:1.15rem;
+  background:#eef4f8;color:var(--ink-soft);border:1.5px solid var(--line)}
+.bit.one{background:var(--yellow);color:#4a3600;border-color:#e0ac16}
+.charbig{font-size:3.2rem;font-weight:800;text-align:center;line-height:1}
+.datatable{width:100%;border-collapse:collapse;margin-top:10px}
+.datatable th,.datatable td{border:1px solid var(--line);padding:8px 10px;text-align:left;font-size:14.5px}
+.datatable th{background:var(--panel-soft);color:var(--ink-soft);font-size:13px}
+.datatable input{padding:7px 9px}
+.kcard{background:linear-gradient(140deg,#052d3a,#0d2440);color:#d9f6fc;border-radius:14px;padding:18px 22px;
+  border-left:6px solid var(--yellow);display:none}
+.kcard.show{display:block;animation:in .4s ease both}
+.kcard h3{color:var(--yellow);margin-bottom:8px}
+.kcard ul{margin:6px 0;padding-left:20px}
+.charstream{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:2rem;margin:14px 0}
+.charstream span{opacity:0;animation:pop .5s ease forwards}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+.globe{display:grid;place-items:center;margin:8px 0 16px}
+.globe .ring{width:190px;height:190px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1f6f8b,#0d2440);
+  border:2px solid rgba(143,235,247,.5);display:grid;place-items:center;color:#eaf7fb;font-size:2.6rem;position:relative}
+.orbit{position:absolute;width:100%;height:100%;animation:spin 22s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.orbit span{position:absolute;left:50%;top:-16px;transform:translateX(-50%);background:#fff;color:var(--ink);
+  font-size:13px;padding:3px 10px;border-radius:999px;box-shadow:var(--shadow);white-space:nowrap}
+.langlist{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.uni-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.uni-out .cell{background:var(--panel-soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.uni-out .cell .k{font-size:11.5px;color:var(--ink-soft)}
+.uni-out .cell .v{font-weight:700;font-size:1.05rem;word-break:break-all}
+.tryrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.trybtn{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:6px 14px;cursor:pointer;font-size:1.15rem}
+.trybtn.done{border-color:var(--green);background:var(--green-soft)}
+
+/* Kính hiển vi văn bản */
+.charcards{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:340px;overflow:auto;padding:4px}
+.chip{width:88px;border:1.5px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;background:#fff;cursor:pointer}
+.chip:hover{border-color:var(--cyan);background:#effafc}
+.chip .c{font-size:1.5rem;font-weight:700;min-height:30px}
+.chip .u{font-size:11px;color:var(--cyan-deep)}
+.chip .b{font-size:11px;color:var(--ink-soft)}
+.chip.multi{border-color:var(--yellow);background:#fffaec}
+.stat{display:inline-block;background:var(--navy);color:#bff3fb;padding:6px 14px;border-radius:999px;margin-right:8px;font-size:14px}
+.bitdump{background:var(--navy);color:#9ff0fb;padding:14px;border-radius:12px;font-size:13px;word-break:break-all;display:none;margin-top:12px}
+.bitdump.show{display:block}
+
+/* Sắp xếp quy trình số hoá */
+.orderlist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.orderslot{border:2px dashed var(--line);border-radius:10px;min-height:46px;padding:6px;display:flex;align-items:center;gap:8px;background:#fbfdfe}
+.orderslot .idx{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#bff3fb;display:grid;place-items:center;font-size:13px;flex:none}
+.orderslot.over{border-color:var(--cyan);background:#effafc}
+.orderslot.right{border-style:solid;border-color:var(--green);background:var(--green-soft)}
+
+/* Quiz */
+.qcard{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;background:#fff}
+.qnum{font-size:12px;font-weight:700;color:var(--cyan-deep)}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opt{border:1.5px solid var(--line);border-radius:10px;padding:10px 13px;cursor:pointer;background:#fff;text-align:left;width:100%}
+.opt:hover{border-color:var(--cyan)}
+.opt.sel{border-color:var(--cyan);background:#effafc}
+.opt.ok{border-color:var(--green);background:var(--green-soft)}
+.opt.no{border-color:var(--red);background:var(--red-soft)}
+.opt:disabled{cursor:default}
+
+/* Passport */
+.passport{background:linear-gradient(145deg,#fff,#eaf8fb);border:2px solid var(--cyan);border-radius:18px;padding:22px;
+  box-shadow:var(--shadow);display:none}
+.passport.show{display:block}
+.pp-head{display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:2px dashed var(--cyan);padding-bottom:12px;flex-wrap:wrap}
+.badge{background:var(--yellow);color:#4a3600;font-weight:800;padding:7px 16px;border-radius:999px;letter-spacing:.5px}
+.pp-item{margin-top:12px}
+.pp-item .q{font-size:12.5px;color:var(--ink-soft);font-weight:700}
+.pp-item .a{font-size:15.5px}
+.sealmark{font-size:12px;color:var(--ink-soft);margin-top:14px;text-align:right}
+
+/* Kết thúc */
+.finalwrap{text-align:center;color:#eaf7fb}
+.finalwrap h2{font-size:clamp(1.8rem,5vw,3rem);color:#fff}
+.confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:60;pointer-events:none;animation:conf 3.2s linear forwards}
+@keyframes conf{to{transform:translateY(105vh) rotate(720deg);opacity:.1}}
+.flow{display:inline-flex;flex-direction:column;gap:4px;align-items:center;margin:18px 0}
+.flow .f{background:rgba(255,255,255,.08);border:1px solid rgba(143,235,247,.4);color:#eaf7fb;padding:8px 26px;border-radius:10px;font-weight:700}
+
+/* Teacher mode */
+#teacher{position:fixed;right:0;top:0;height:100%;width:330px;max-width:88vw;background:#07192b;color:#d7ecf5;
+  z-index:80;box-shadow:-14px 0 40px rgba(0,0,0,.4);padding:20px;overflow:auto;transform:translateX(105%);transition:transform .28s}
+#teacher.open{transform:none}
+#teacher h3{color:var(--yellow)}
+#teacher .tbtn{display:block;width:100%;text-align:left;margin-bottom:7px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.18);color:#eaf7fb;padding:9px 12px;border-radius:9px;cursor:pointer}
+#teacher .tbtn:hover{background:rgba(255,255,255,.16)}
+.answerkey{display:none;background:rgba(255,197,49,.1);border:1px solid rgba(255,197,49,.4);border-radius:10px;padding:10px;font-size:13px;margin-top:10px}
+.answerkey.show{display:block}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--navy);
+  color:#bff3fb;padding:11px 22px;border-radius:999px;z-index:90;opacity:0;transition:.3s;box-shadow:var(--shadow);border:1px solid var(--cyan)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.navbar{position:fixed;left:0;right:0;bottom:0;z-index:35;background:rgba(9,27,48,.96);border-top:1px solid rgba(127,230,242,.25)}
+.navwrap{max-width:1180px;margin:0 auto;padding:10px 18px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.navnote{color:#9fc2d6;font-size:13px}
+@media print{
+  #topbar,.navbar,#teacher,#bitfield,.noprint{display:none!important}
+  body{background:#fff}
+  main{padding:0}
+  .screen{display:none!important}
+  .screen.on{display:block!important}
+  .passport{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<div id="bitfield" aria-hidden="true"></div>
+<!-- =========================================================
+     THANH TIẾN TRÌNH
+     ========================================================= -->
+<header id="topbar">
+  <div class="topwrap">
+    <div class="brandmark"><span class="dot"></span>DATA LAB</div>
+    <div class="steps" id="steps"></div>
+    <div class="hud">
+      <span>👤 <b id="hudName">—</b></span>
+      <span>👥 <b id="hudGroup">—</b></span>
+      <span>✅ <b id="hudDone">0</b>/7</span>
+      <span class="xpchip" id="hudXp">0 XP</span>
+      <button class="iconbtn" id="btnTeacher" title="Chế độ giáo viên" aria-label="Chế độ giáo viên">⚙</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- =========================================================
+     MÀN HÌNH 0 – WELCOME
+     ========================================================= -->
+<section class="screen on" id="sc-welcome">
+  <div class="hero">
+    <h1>DATA LAB</h1>
+    <div class="sub">GIẢI MÃ THẾ GIỚI DỮ LIỆU</div>
+    <div class="lesson">Bài 3 – Một số kiểu dữ liệu và dữ liệu văn bản · Tin học THPT</div>
+    <div class="chain">
+      <div class="node">A</div><div class="arw">→</div>
+      <div class="node">65</div><div class="arw">→</div>
+      <div class="node bin mono">01000001</div>
+    </div>
+    <div class="typechips">
+      <span class="typechip">🖼️ Ảnh</span>
+      <span class="typechip">🔢 Số</span>
+      <span class="typechip">🎵 Âm thanh</span>
+      <span class="typechip">🔤 Văn bản</span>
+      <span class="typechip">✅ TRUE / FALSE</span>
+    </div>
+  </div>
+  <div class="card signin">
+    <h3>Đăng kí vào phòng lab</h3>
+    <p class="lead">Tên và nhóm được lưu ngay trên máy này để em tiếp tục được nếu lỡ đóng trang.</p>
+    <label class="fld" for="inName">Họ và tên</label>
+    <input type="text" id="inName" placeholder="Ví dụ: Nguyễn Minh An" autocomplete="off">
+    <label class="fld" for="inGroup">Nhóm</label>
+    <input type="text" id="inGroup" placeholder="Ví dụ: Nhóm 3" autocomplete="off">
+    <div class="feedback no" id="fbLogin">Nhập họ tên và nhóm trước khi bắt đầu.</div>
+    <div class="btnrow"><button class="btn" id="btnStart">BẮT ĐẦU KHÁM PHÁ</button></div>
+  </div>
+</section>
+
+<!-- =========================================================
+     BIG QUESTION
+     ========================================================= -->
+<section class="screen" id="sc-bigq">
+  <div class="bigq">
+    <div class="mission-tag">CÂU HỎI LỚN CỦA BÀI HỌC</div>
+    <p class="qt">Máy tính chỉ làm việc với <em>0</em> và <em>1</em>. Vậy làm sao nó lưu được tên người, con số, hình ảnh và tiếng Việt?</p>
+    <div class="chain" style="margin-top:28px">
+      <div class="node">Tên người</div><div class="arw">?</div>
+      <div class="node">😀</div><div class="arw">?</div>
+      <div class="node bin mono">0 1 0 1 1 0</div>
+    </div>
+    <p style="color:#9fc2d6">Cả lớp chưa trả lời ngay. Em sẽ tự tìm ra câu trả lời qua 4 nhiệm vụ trong phòng lab.</p>
+  </div>
+</section>
+
+<!-- =========================================================
+     KHỞI ĐỘNG – HỒ SƠ DỮ LIỆU BÍ ẨN
+     ========================================================= -->
+<section class="screen" id="sc-warmup">
+  <div class="card">
+    <div class="mission-tag">KHỞI ĐỘNG</div>
+    <h2>Hồ sơ dữ liệu bí ẩn</h2>
+    <p class="lead">Đây là thẻ học sinh điện tử của bạn An. Nhấn vào từng dòng và <b>dự đoán</b> kiểu dữ liệu nên dùng để lưu thông tin đó. Chưa có đáp án nào được công bố ở bước này.</p>
+  </div>
+  <div class="grid2">
+    <div class="idcard">
+      <div class="idhead">
+        <div class="avatar">🧑‍🎓</div>
+        <div>
+          <div style="font-size:12px;color:#a9cede">DIGITAL STUDENT ID</div>
+          <div style="font-size:1.2rem;font-weight:800">Trường THPT Dữ Liệu</div>
+        </div>
+      </div>
+      <div id="idrows"></div>
+    </div>
+    <div>
+      <div class="card" id="idQuestionBox">
+        <h3 id="idQTitle">Chọn một dòng trên thẻ</h3>
+        <p class="lead" id="idQText">Nhấn vào một dòng bên trái để bắt đầu dự đoán.</p>
+        <div class="opts" id="idOpts"></div>
+        <div class="feedback ok" id="fbId"></div>
+      </div>
+      <div class="card soft" id="idConflict" style="display:none">
+        <h3>Tình huống gây tranh cãi</h3>
+        <p>Mã học sinh <b class="mono">001023</b> nhìn giống một số. Vậy có nhất thiết phải lưu bằng kiểu <b>SỐ</b> không?</p>
+        <div class="opts">
+          <button class="opt" data-conf="A">A. Có, vì nó gồm toàn chữ số</button>
+          <button class="opt" data-conf="B">B. Không nhất thiết</button>
+        </div>
+        <label class="fld" for="idExplain">Giải thích suy nghĩ của em bằng một câu</label>
+        <textarea id="idExplain" placeholder="Theo em, ..."></textarea>
+        <div class="btnrow"><button class="btn" id="btnSaveWarm">Lưu câu trả lời</button></div>
+        <div class="feedback ok" id="fbWarm"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     MISSION 1 – PHÂN LOẠI DỮ LIỆU
+     ========================================================= -->
+<section class="screen" id="sc-m1">
+  <div class="card">
+    <div class="mission-tag">MISSION 1</div>
+    <h2>Phòng phân loại dữ liệu</h2>
+    <p class="lead">Kéo từng thẻ vào khu vực em cho là đúng. Trên máy tính có thể kéo bằng chuột, hoặc nhấn chọn thẻ rồi nhấn vào khu vực muốn thả. Nhấn lại thẻ đã thả để lấy nó ra.</p>
+    <div class="cardpool" id="poolM1"></div>
+    <div class="zones" id="zonesM1">
+      <div class="zone" data-zone="text"><h4>🔤 VĂN BẢN</h4><div class="drop"></div></div>
+      <div class="zone" data-zone="number"><h4>🔢 SỐ</h4><div class="drop"></div></div>
+      <div class="zone" data-zone="logic"><h4>✅ LOGIC</h4><div class="drop"></div></div>
+      <div class="zone" data-zone="media"><h4>🖼️ ĐA PHƯƠNG TIỆN</h4><div class="drop"></div></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="btnCheckM1">KIỂM TRA PHÂN LOẠI</button>
+      <button class="btn ghost" id="btnHintM1">Gợi ý</button>
+      <button class="btn ghost" id="btnResetM1">Làm lại</button>
+    </div>
+    <div class="feedback" id="fbM1"></div>
+  </div>
+
+  <div class="card" id="m1After" style="display:none">
+    <h3>Sơ đồ kiểu dữ liệu</h3>
+    <div class="tree mono">DỮ LIỆU
+├── Văn bản
+├── Số
+├── Logic
+└── Đa phương tiện
+    ├── Hình ảnh
+    └── Âm thanh</div>
+    <div class="qbox"><strong>Câu hỏi phản tư:</strong> Điều gì quyết định kiểu dữ liệu — hình thức nhìn thấy hay mục đích sử dụng?</div>
+    <textarea id="m1Reflect" placeholder="Viết 1–2 câu theo suy nghĩ của em..."></textarea>
+    <div class="btnrow"><button class="btn" id="btnM1Reflect">Gửi câu trả lời</button></div>
+    <div class="feedback ok" id="fbM1R"></div>
+    <div class="kcard" id="kcM1">
+      <h3>Chốt kiến thức</h3>
+      <ul>
+        <li>Bốn nhóm dữ liệu thường gặp: văn bản, số, logic, đa phương tiện (hình ảnh, âm thanh).</li>
+        <li>Dữ liệu số là dữ liệu dùng để tính toán, so sánh độ lớn.</li>
+        <li>Dãy chữ số như mã định danh, số điện thoại thường được lưu dạng văn bản vì ta không cộng trừ nhân chia trên chúng.</li>
+        <li>Mục đích sử dụng quyết định kiểu dữ liệu, không phải hình thức nhìn thấy.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<!-- =========================================================
+     MISSION 2 – ASCII CODE BREAKER
+     ========================================================= -->
+<section class="screen" id="sc-m2">
+  <div class="card">
+    <div class="mission-tag">MISSION 2</div>
+    <h2>Giải mã ASCII</h2>
+    <div class="qbox"><strong>Dự đoán trước khi thử:</strong> Máy tính "nhìn thấy" chữ A như thế nào?</div>
+    <div class="opts" id="m2Predict">
+      <button class="opt" data-p="1">Máy tính lưu đúng hình dạng nét chữ A</button>
+      <button class="opt" data-p="2">Máy tính lưu một con số đại diện cho chữ A</button>
+      <button class="opt" data-p="3">Máy tính lưu chữ A giống hệt như ta viết tay</button>
+    </div>
+    <div class="feedback hint" id="fbM2P"></div>
+  </div>
+
+  <div class="card" id="m2Lab" style="display:none">
+    <h3>ASCII Explorer</h3>
+    <p class="lead">Gõ một kí tự tiếng Anh (chữ cái, chữ số hoặc dấu câu) để xem máy tính lưu nó bằng con số nào.</p>
+    <div class="grid2">
+      <div>
+        <label class="fld" for="asciiIn">Nhập 1 kí tự tiếng Anh</label>
+        <input type="text" id="asciiIn" maxlength="2" value="A">
+        <div class="feedback hint" id="fbAscii"></div>
+      </div>
+      <div class="pipeline">
+        <div class="box" id="ascChar">A</div>
+        <div class="down">↓</div>
+        <div class="box" id="ascDec">65</div>
+        <div class="down">↓</div>
+        <div class="box small mono" id="ascBin">01000001</div>
+      </div>
+    </div>
+    <div class="bits" id="ascBits"></div>
+  </div>
+
+  <div class="card" id="m2Task" style="display:none">
+    <h3>Thử thách: giải mã S – G – K</h3>
+    <p class="lead">Dùng ASCII Explorer ở trên để tra từng kí tự, rồi điền vào bảng.</p>
+    <table class="datatable">
+      <thead><tr><th>Kí tự</th><th>Mã thập phân</th><th>Mã nhị phân 8 bit</th></tr></thead>
+      <tbody>
+        <tr><td class="mono" style="font-size:1.2rem">S</td><td><input type="text" id="sDec" inputmode="numeric" placeholder="?"></td><td><input type="text" id="sBin" class="mono" placeholder="8 chữ số 0/1"></td></tr>
+        <tr><td class="mono" style="font-size:1.2rem">G</td><td><input type="text" id="gDec" inputmode="numeric" placeholder="?"></td><td><input type="text" id="gBin" class="mono" placeholder="8 chữ số 0/1"></td></tr>
+        <tr><td class="mono" style="font-size:1.2rem">K</td><td><input type="text" id="kDec" inputmode="numeric" placeholder="?"></td><td><input type="text" id="kBin" class="mono" placeholder="8 chữ số 0/1"></td></tr>
+      </tbody>
+    </table>
+    <div class="btnrow">
+      <button class="btn" id="btnCheckSGK">KIỂM TRA</button>
+      <button class="btn ghost" id="btnHintSGK">Gợi ý</button>
+      <button class="btn ghost" id="btnResetSGK">Làm lại</button>
+    </div>
+    <div class="feedback" id="fbSGK"></div>
+  </div>
+
+  <div class="card" id="m2Rev" style="display:none">
+    <h3>Giải mã ngược</h3>
+    <p>Dãy bit <b class="mono" style="font-size:1.2rem">01000001</b> đại diện cho kí tự nào?</p>
+    <div style="max-width:200px"><input type="text" id="revIn" maxlength="2" placeholder="?"></div>
+    <div class="btnrow"><button class="btn" id="btnRev">Kiểm tra</button></div>
+    <div class="feedback" id="fbRev"></div>
+    <div class="charstream" id="m2Anim" style="display:none"></div>
+    <div class="kcard" id="kcM2">
+      <h3>Chốt kiến thức – ASCII</h3>
+      <ul>
+        <li>ASCII chuẩn dùng <b>7 bit</b> cho mỗi kí tự.</li>
+        <li>Có <b>128 mã</b>, đánh số từ 0 đến 127.</li>
+        <li>Đủ cho bảng chữ cái tiếng Anh, chữ số và các kí hiệu cơ bản.</li>
+        <li>Máy tính lưu kí tự bằng mã số, rồi lưu mã số bằng dãy bit 0 và 1.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     MINI CHALLENGE – ASCII CÓ ĐỦ KHÔNG?
+     ========================================================= -->
+<section class="screen" id="sc-mini">
+  <div class="card">
+    <div class="mission-tag">MINI CHALLENGE</div>
+    <h2>ASCII có đủ không?</h2>
+    <p class="lead">Nhấn nút để cho các kí tự lần lượt đi vào bảng mã ASCII và quan sát chuyện gì xảy ra.</p>
+    <div class="btnrow"><button class="btn dark" id="btnMiniRun">Cho kí tự chạy qua ASCII</button></div>
+    <div class="charstream" id="miniStream"></div>
+    <div class="feedback hint" id="fbMini"></div>
+  </div>
+  <div class="card" id="miniQ" style="display:none">
+    <div class="qbox"><strong>Câu hỏi:</strong> Nếu hệ thống ban đầu chỉ thiết kế cho một số lượng kí tự hạn chế, điều gì xảy ra khi thế giới cần biểu diễn hàng nghìn ngôn ngữ?</div>
+    <div class="opts" id="miniOpts">
+      <button class="opt" data-m="A">A. Tất cả vẫn dùng chung mã ASCII được.</button>
+      <button class="opt" data-m="B">B. Cần một hệ thống mã kí tự rộng hơn.</button>
+      <button class="opt" data-m="C">C. Xóa các kí tự đặc biệt.</button>
+      <button class="opt" data-m="D">D. Chỉ dùng tiếng Anh trên máy tính.</button>
+    </div>
+    <div class="feedback" id="fbMiniQ"></div>
+  </div>
+</section>
+
+<!-- =========================================================
+     MISSION 3 – UNICODE RESCUE
+     ========================================================= -->
+<section class="screen" id="sc-m3">
+  <div class="card">
+    <div class="mission-tag">MISSION 3</div>
+    <h2>Giải cứu ngôn ngữ với Unicode</h2>
+    <div class="globe">
+      <div class="ring">🌏
+        <div class="orbit" style="animation-duration:20s"><span>English</span></div>
+        <div class="orbit" style="animation-duration:20s;transform:rotate(60deg)"><span>Tiếng Việt</span></div>
+        <div class="orbit" style="animation-duration:20s;transform:rotate(120deg)"><span>한국어</span></div>
+        <div class="orbit" style="animation-duration:20s;transform:rotate(180deg)"><span>中文</span></div>
+        <div class="orbit" style="animation-duration:20s;transform:rotate(240deg)"><span>日本語</span></div>
+        <div class="orbit" style="animation-duration:20s;transform:rotate(300deg)"><span>😀</span></div>
+      </div>
+    </div>
+    <p class="lead" style="text-align:center;margin:0 auto">Một thế giới nhiều ngôn ngữ cần một hệ thống mã kí tự thống nhất.</p>
+  </div>
+
+  <div class="card">
+    <h3>Unicode Lab</h3>
+    <p class="lead">Nhập một kí tự bất kì. Trang web dùng chính bộ mã hoá UTF-8 của trình duyệt để tính ra kết quả thật, không phải số liệu dựng sẵn.</p>
+    <div class="grid2">
+      <div>
+        <label class="fld" for="uniIn">Hãy nhập một kí tự</label>
+        <input type="text" id="uniIn" value="A">
+        <div class="tryrow" id="uniTry"></div>
+        <p class="lead" style="font-size:13.5px">Thử đủ 5 kí tự gợi ý ở trên để hoàn thành nhiệm vụ. Đã thử: <b id="uniCount">0</b>/5</p>
+      </div>
+      <div>
+        <div class="charbig" id="uniChar">A</div>
+        <div class="uni-out" id="uniOut"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="m3After" style="display:none">
+    <div class="grid2">
+      <div class="card soft">
+        <h3>ASCII</h3>
+        <p>128 mã · phạm vi kí tự hạn chế</p>
+        <div class="bits"><span class="bit one">0</span><span class="bit">…</span><span class="bit">1</span><span class="bit">2</span><span class="bit">7</span></div>
+      </div>
+      <div class="card soft">
+        <h3>Unicode</h3>
+        <p>Hỗ trợ rất nhiều hệ chữ và kí tự trên thế giới</p>
+        <div class="langlist"><span class="typechip" style="color:var(--ink);border-color:var(--line)">A ă ộ đ 中 한 あ Я ع 😀</span></div>
+      </div>
+    </div>
+    <div class="qbox"><strong>Giải thích:</strong> Tại sao Unicode cần thiết?</div>
+    <textarea id="m3Reflect" placeholder="Viết 1–2 câu..."></textarea>
+    <div class="btnrow"><button class="btn" id="btnM3Reflect">Gửi câu trả lời</button></div>
+    <div class="feedback ok" id="fbM3R"></div>
+    <div class="kcard" id="kcM3">
+      <h3>Chốt kiến thức – Unicode và UTF-8</h3>
+      <ul>
+        <li><b>Unicode</b> là hệ thống mã kí tự: gán cho mỗi kí tự một mã riêng, viết dạng U+XXXX.</li>
+        <li><b>UTF-8</b> là một cách mã hoá các kí tự Unicode thành byte để lưu trữ và truyền đi.</li>
+        <li>Trong UTF-8, số byte của mỗi kí tự thay đổi: kí tự tiếng Anh 1 byte, nhiều kí tự tiếng Việt 2–3 byte, emoji 4 byte.</li>
+        <li>Nhờ vậy một văn bản có thể chứa nhiều ngôn ngữ cùng lúc mà không bị lỗi font.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     MISSION 4 – KÍNH HIỂN VI VĂN BẢN
+     ========================================================= -->
+<section class="screen" id="sc-m4">
+  <div class="card">
+    <div class="mission-tag">MISSION 4</div>
+    <h2>Kính hiển vi văn bản</h2>
+    <p class="lead">Nhập một câu tiếng Việt rồi soi xem máy tính chia nhỏ nó thành những gì.</p>
+    <textarea id="textIn">Em học Tin học ở Cần Thơ.</textarea>
+    <div class="btnrow">
+      <button class="btn" id="btnScan">SOI DỮ LIỆU</button>
+      <button class="btn ghost" id="btnBits">XEM DẠNG BIT</button>
+    </div>
+    <div id="textStats" style="margin-top:14px;display:none">
+      <span class="stat">Tổng số kí tự: <b id="stChars">0</b></span>
+      <span class="stat">Tổng số UTF-8 byte: <b id="stBytes">0</b></span>
+      <span class="stat">Kí tự nhiều byte nhất: <b id="stMax">0</b> byte</span>
+    </div>
+    <div class="charcards" id="charCards"></div>
+    <div class="feedback hint" id="fbChip"></div>
+    <div class="bitdump mono" id="bitDump"></div>
+  </div>
+  <div class="card" id="m4After" style="display:none">
+    <h3>Hành trình của một câu văn</h3>
+    <div class="pipeline">
+      <div class="box small" id="pipeText">"Em học Tin học"</div><div class="down">↓</div>
+      <div class="box small">KÍ TỰ</div><div class="down">↓</div>
+      <div class="box small">UNICODE</div><div class="down">↓</div>
+      <div class="box small">UTF-8 BYTE</div><div class="down">↓</div>
+      <div class="box small mono">BIT 0 VÀ 1</div>
+    </div>
+    <div class="kcard show">
+      <h3>Chốt kiến thức</h3>
+      <ul>
+        <li>Văn bản được tách thành từng kí tự.</li>
+        <li>Mỗi kí tự có một mã Unicode.</li>
+        <li>Mã đó được mã hoá thành byte theo UTF-8.</li>
+        <li>Mỗi byte là 8 bit 0 và 1 — thứ duy nhất máy tính lưu được.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     SỐ HOÁ VĂN BẢN
+     ========================================================= -->
+<section class="screen" id="sc-digit">
+  <div class="card">
+    <div class="mission-tag">TỪ THẾ GIỚI THẬT ĐẾN DỮ LIỆU</div>
+    <h2>Số hoá văn bản</h2>
+    <div class="grid3">
+      <div class="card soft"><div style="font-size:2rem">⌨️</div><h3>Gõ bàn phím</h3><p class="lead">Người dùng nhập trực tiếp từng kí tự.</p></div>
+      <div class="card soft"><div style="font-size:2rem">🖨️</div><h3>Quét trang giấy (OCR)</h3><p class="lead">Máy chụp ảnh trang giấy rồi nhận dạng chữ.</p></div>
+      <div class="card soft"><div style="font-size:2rem">🎙️</div><h3>Đọc lời nói</h3><p class="lead">Phần mềm nhận dạng tiếng nói thành chữ.</p></div>
+    </div>
+    <p class="lead">Dù bằng cách nào, quá trình số hoá cũng đi qua cùng một chuỗi bước. Kéo 6 bước dưới đây vào đúng thứ tự.</p>
+    <div class="cardpool" id="poolOrder"></div>
+    <div class="orderlist" id="orderSlots"></div>
+    <div class="btnrow">
+      <button class="btn" id="btnCheckOrder">Kiểm tra thứ tự</button>
+      <button class="btn ghost" id="btnResetOrder">Làm lại</button>
+    </div>
+    <div class="feedback" id="fbOrder"></div>
+    <div class="kcard" id="kcDigit">
+      <h3>Chốt kiến thức</h3>
+      <p>Số hoá văn bản là quá trình đưa nội dung văn bản vào môi trường số để máy tính có thể lưu trữ và xử lí.</p>
+    </div>
+  </div>
+</section>
+<!-- =========================================================
+     DATA PASSPORT
+     ========================================================= -->
+<section class="screen" id="sc-pass">
+  <div class="card noprint">
+    <div class="mission-tag">DATA PASSPORT</div>
+    <h2>Hộ chiếu dữ liệu của nhóm</h2>
+    <p class="lead">Tổng kết bằng chính lời của em. Trả lời đủ 8 mục rồi tạo hộ chiếu để in hoặc lưu PDF.</p>
+    <div class="grid2">
+      <div>
+        <label class="fld" for="p1">1. Các kiểu dữ liệu chính em đã khám phá</label>
+        <textarea id="p1"></textarea>
+        <label class="fld" for="p2">2. Dữ liệu số khác dữ liệu văn bản ở điểm nào?</label>
+        <textarea id="p2"></textarea>
+        <label class="fld" for="p3">3. ASCII dùng để làm gì?</label>
+        <textarea id="p3"></textarea>
+        <label class="fld" for="p4">4. Vì sao ASCII không đủ cho mọi ngôn ngữ?</label>
+        <textarea id="p4"></textarea>
+      </div>
+      <div>
+        <label class="fld" for="p5">5. Unicode giải quyết vấn đề gì?</label>
+        <textarea id="p5"></textarea>
+        <label class="fld" for="p6">6. UTF-8 là gì?</label>
+        <textarea id="p6"></textarea>
+        <label class="fld" for="p7">7. Hoàn thành chuỗi: Văn bản → ___ → ___ → Byte → ___</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span>Văn bản →</span><input type="text" id="p7a" style="width:120px" placeholder="?">
+          <span>→</span><input type="text" id="p7b" style="width:140px" placeholder="?">
+          <span>→ Byte →</span><input type="text" id="p7c" style="width:100px" placeholder="?">
+        </div>
+        <label class="fld" for="p8">8. Điều làm em bất ngờ nhất hôm nay</label>
+        <textarea id="p8"></textarea>
+      </div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="btnMakePass">TẠO DATA PASSPORT</button>
+      <button class="btn ghost" id="btnPrint">IN / LƯU PDF</button>
+      <button class="btn ghost" id="btnExport">Xuất kết quả (.json)</button>
+    </div>
+    <div class="feedback" id="fbPass"></div>
+  </div>
+
+  <div class="passport" id="passport">
+    <div class="pp-head">
+      <div>
+        <div style="font-size:12px;color:var(--ink-soft);font-weight:700">DATA PASSPORT · BÀI 3 · TIN HỌC</div>
+        <div style="font-size:1.5rem;font-weight:800" id="ppName">—</div>
+        <div id="ppGroup" style="color:var(--ink-soft)">—</div>
+      </div>
+      <div style="text-align:right">
+        <div class="badge" id="ppBadge">DATA ROOKIE</div>
+        <div style="margin-top:6px;font-weight:700" id="ppXp">0 XP</div>
+      </div>
+    </div>
+    <div id="ppBody"></div>
+    <div class="sealmark">Phòng thí nghiệm dữ liệu · <span id="ppDate"></span></div>
+  </div>
+</section>
+
+<!-- =========================================================
+     FINAL CHALLENGE
+     ========================================================= -->
+<section class="screen" id="sc-final">
+  <div class="card">
+    <div class="mission-tag">FINAL CHALLENGE</div>
+    <h2>Em đã giải mã được dữ liệu chưa?</h2>
+    <p class="lead">8 câu hỏi. Mỗi câu có phản hồi và giải thích ngay sau khi trả lời. Trả lời chưa đúng vẫn được thử lại, chỉ lần đúng đầu tiên được tính trọn điểm.</p>
+    <div id="quizWrap"></div>
+    <div class="feedback ok" id="fbQuiz"></div>
+  </div>
+</section>
+
+<!-- =========================================================
+     EXIT TICKET
+     ========================================================= -->
+<section class="screen" id="sc-exit">
+  <div class="card">
+    <div class="mission-tag">EXIT TICKET</div>
+    <h2>3 – 2 – 1</h2>
+    <div class="grid3">
+      <div>
+        <h3>3 điều em nhớ</h3>
+        <input type="text" id="e1" placeholder="1."><div style="height:8px"></div>
+        <input type="text" id="e2" placeholder="2."><div style="height:8px"></div>
+        <input type="text" id="e3" placeholder="3.">
+      </div>
+      <div>
+        <h3>2 điều em thấy thú vị</h3>
+        <input type="text" id="e4" placeholder="1."><div style="height:8px"></div>
+        <input type="text" id="e5" placeholder="2.">
+      </div>
+      <div>
+        <h3>1 câu hỏi còn thắc mắc</h3>
+        <textarea id="e6" placeholder="Em vẫn chưa hiểu..."></textarea>
+      </div>
+    </div>
+    <div class="btnrow"><button class="btn" id="btnExit">HOÀN THÀNH BÀI HỌC</button></div>
+    <div class="feedback" id="fbExit"></div>
+  </div>
+</section>
+
+<!-- =========================================================
+     MÀN HÌNH KẾT THÚC
+     ========================================================= -->
+<section class="screen" id="sc-done">
+  <div class="finalwrap">
+    <div class="mission-tag">DATA MISSION COMPLETED</div>
+    <h2>Em đã giải mã xong thế giới dữ liệu</h2>
+    <p style="color:#bff3fb;font-size:1.1rem">
+      <b id="dnName">—</b> · <span id="dnGroup">—</span><br>
+      Hoàn thành <b id="dnDone">0</b>/7 hoạt động · <b id="dnXp">0</b> XP
+    </p>
+    <div class="badge" id="dnBadge" style="display:inline-block">DATA ROOKIE</div>
+    <div class="card" style="max-width:700px;margin:24px auto;text-align:left">
+      <div class="qbox"><strong>Quay lại câu hỏi lớn:</strong> Máy tính chỉ làm việc với 0 và 1. Vậy máy tính lưu chữ viết như thế nào?</div>
+      <div class="opts" id="finalOpts">
+        <button class="opt" data-f="1">Máy tính lưu hình ảnh của từng chữ cái.</button>
+        <button class="opt" data-f="2">Mỗi kí tự được gán một mã, mã đó được mã hoá thành byte và cuối cùng là dãy bit 0–1.</button>
+        <button class="opt" data-f="3">Máy tính hiểu trực tiếp chữ viết của con người.</button>
+      </div>
+      <label class="fld" for="finalWrite">Hoặc viết câu kết luận của riêng em</label>
+      <textarea id="finalWrite" placeholder="Theo em, máy tính lưu chữ viết bằng cách..."></textarea>
+      <div class="btnrow"><button class="btn" id="btnFinalSave">Lưu kết luận</button></div>
+      <div class="feedback ok" id="fbFinalC"></div>
+    </div>
+    <div class="flow">
+      <div class="f">THÔNG TIN</div><div class="arw">↓</div>
+      <div class="f">DỮ LIỆU</div><div class="arw">↓</div>
+      <div class="f">MÃ HOÁ</div><div class="arw">↓</div>
+      <div class="f">BYTE</div><div class="arw">↓</div>
+      <div class="f">BIT</div>
+    </div>
+    <p style="max-width:52ch;margin:16px auto;color:#9ff0fb;font-size:1.05rem">
+      Đằng sau mỗi chữ em nhìn thấy trên màn hình là một thế giới của mã và những bit 0 – 1.
+    </p>
+    <div class="btnrow" style="justify-content:center">
+      <button class="btn ghost" id="btnExport2">Xuất kết quả (.json)</button>
+      <button class="btn dark" id="btnReplay">Xem lại các nhiệm vụ</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- =========================================================
+     THANH ĐIỀU HƯỚNG
+     ========================================================= -->
+<nav class="navbar" id="navbar">
+  <div class="navwrap">
+    <button class="btn ghost" id="btnBack">← Quay lại</button>
+    <span class="navnote" id="navNote"></span>
+    <button class="btn" id="btnNext">Tiếp tục →</button>
+  </div>
+</nav>
+
+<!-- =========================================================
+     CHẾ ĐỘ GIÁO VIÊN
+     ========================================================= -->
+<aside id="teacher" aria-hidden="true">
+  <h3>Teacher Mode</h3>
+  <p style="font-size:13px;color:#9fc2d6">Bảng điều khiển dành cho giáo viên. Học sinh không thấy bảng này trừ khi mở bằng nút ⚙.</p>
+  <button class="tbtn" id="tFull">⛶ Toàn màn hình</button>
+  <button class="tbtn" id="tKey">🔑 Hiện / ẩn đáp án chuẩn</button>
+  <button class="tbtn" id="tXp">🏅 Bật / tắt hiển thị XP</button>
+  <button class="tbtn" id="tUnlock">🔓 Bật / tắt khoá nhiệm vụ</button>
+  <button class="tbtn" id="tReset">♻ Reset toàn bộ tiến độ</button>
+  <button class="tbtn" id="tExport">💾 Xuất kết quả học sinh</button>
+  <h3 style="margin-top:18px">Chuyển nhanh</h3>
+  <div id="tJump"></div>
+  <div class="answerkey" id="answerKey"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+/* =========================================================
+   1. LƯU TRỮ (localStorage + dự phòng bộ nhớ tạm)
+   ========================================================= */
+var MEM = {};                      // dùng khi trình duyệt chặn localStorage
+var KEY = "datalab_bai3_v1";
+var Store = {
+  read: function(){
+    try{ var s = window.localStorage.getItem(KEY); return s ? JSON.parse(s) : null; }
+    catch(e){ return MEM[KEY] ? JSON.parse(MEM[KEY]) : null; }
+  },
+  write: function(obj){
+    var s = JSON.stringify(obj);
+    try{ window.localStorage.setItem(KEY, s); }catch(e){ MEM[KEY] = s; }
+  },
+  clear: function(){
+    try{ window.localStorage.removeItem(KEY); }catch(e){}
+    delete MEM[KEY];
+  }
+};
+
+/* Trạng thái mặc định của một phiên học */
+function blankState(){
+  return {
+    name:"", group:"", xp:0, screen:0,
+    awarded:{},                      // các mốc XP đã nhận, tránh cộng trùng
+    done:{},                         // hoạt động đã hoàn thành
+    answers:{},                      // toàn bộ câu trả lời của học sinh
+    tried:{},                        // các kí tự đã thử trong Unicode Lab
+    settings:{ showXp:true, unlock:false, showKey:false }
+  };
+}
+var state = Store.read() || blankState();
+if(!state.settings) state.settings = { showXp:true, unlock:false, showKey:false };
+function save(){ Store.write(state); }
+
+/* =========================================================
+   2. TIỆN ÍCH CHUNG
+   ========================================================= */
+function $(id){ return document.getElementById(id); }
+function qs(s,root){ return (root||document).querySelector(s); }
+function qsa(s,root){ return Array.prototype.slice.call((root||document).querySelectorAll(s)); }
+function show(el,cls){ el.classList.add(cls||"show"); }
+function fb(id, type, msg){
+  var el = $(id);
+  el.className = "feedback " + type + " show";
+  el.innerHTML = msg;
+}
+function hideFb(id){ $(id).className = "feedback"; }
+function toast(msg){
+  var t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+/* =========================================================
+   3. XP VÀ HUY HIỆU
+   ========================================================= */
+function addXP(key, amount, quiet){
+  if(state.awarded[key]) return false;      // mỗi mốc chỉ tính điểm một lần
+  state.awarded[key] = amount;
+  state.xp += amount;
+  if(state.xp > 1000) state.xp = 1000;
+  save(); updateHud();
+  if(!quiet && state.settings.showXp) toast("+" + amount + " XP");
+  return true;
+}
+function badgeOf(xp){
+  if(xp >= 950) return "UNICODE MASTER";
+  if(xp >= 850) return "DATA MASTER";
+  if(xp >= 700) return "CODE BREAKER";
+  if(xp >= 500) return "DATA EXPLORER";
+  return "DATA ROOKIE";
+}
+var MAIN_ACTIVITIES = ["warmup","m1","m2","m3","m4","pass","final"];
+function doneCount(){
+  var n = 0;
+  MAIN_ACTIVITIES.forEach(function(k){ if(state.done[k]) n++; });
+  return n;
+}
+function markDone(k){
+  if(!state.done[k]){ state.done[k] = true; save(); updateHud(); renderSteps(); }
+  updateNav();
+}
+
+/* =========================================================
+   4. DANH SÁCH MÀN HÌNH VÀ ĐIỀU HƯỚNG
+   ========================================================= */
+var STEP_LABELS = ["KHỞI ĐỘNG","MISSION 1","MISSION 2","MISSION 3","MISSION 4","DATA PASSPORT","FINAL CHALLENGE"];
+var SCREENS = [
+  { id:"sc-welcome", step:0, need:function(){ return !!(state.name && state.group); },
+    msg:"Nhập họ tên và nhóm để vào phòng lab." },
+  { id:"sc-bigq", step:0, need:function(){ return true; }, msg:"" },
+  { id:"sc-warmup", step:0, need:function(){ return !!state.done.warmup; },
+    msg:"Dự đoán đủ 7 dòng trên thẻ và lưu phần giải thích." },
+  { id:"sc-m1", step:1, need:function(){ return !!state.done.m1; },
+    msg:"Phân loại đúng cả 12 thẻ và trả lời câu hỏi phản tư." },
+  { id:"sc-m2", step:2, need:function(){ return !!state.done.m2; },
+    msg:"Hoàn thành bảng S–G–K và câu giải mã ngược." },
+  { id:"sc-mini", step:2, need:function(){ return !!state.done.mini; },
+    msg:"Chọn phương án đúng để mở khoá Mission 3." },
+  { id:"sc-m3", step:3, need:function(){ return !!state.done.m3; },
+    msg:"Thử đủ 5 kí tự trong Unicode Lab và viết giải thích." },
+  { id:"sc-m4", step:4, need:function(){ return !!state.done.m4; },
+    msg:"Soi dữ liệu và xem dạng bit của câu văn." },
+  { id:"sc-digit", step:4, need:function(){ return !!state.done.digit; },
+    msg:"Sắp đúng thứ tự 6 bước số hoá." },
+  { id:"sc-pass", step:5, need:function(){ return !!state.done.pass; },
+    msg:"Trả lời đủ 8 mục rồi tạo Data Passport." },
+  { id:"sc-final", step:6, need:function(){ return !!state.done.final; },
+    msg:"Trả lời đúng cả 8 câu hỏi." },
+  { id:"sc-exit", step:6, need:function(){ return !!state.done.exit; },
+    msg:"Hoàn thành phiếu 3–2–1." },
+  { id:"sc-done", step:6, need:function(){ return true; }, msg:"" }
+];
+var cur = 0;
+
+function renderSteps(){
+  var wrap = $("steps");
+  if(!wrap.childNodes.length){
+    STEP_LABELS.forEach(function(lb,i){
+      var d = document.createElement("div");
+      d.className = "step"; d.dataset.i = i;
+      d.innerHTML = '<div class="bar"></div><span class="lbl">' + lb + '</span>';
+      wrap.appendChild(d);
+    });
+  }
+  var curStep = SCREENS[cur].step;
+  qsa(".step", wrap).forEach(function(d,i){
+    d.classList.toggle("active", i === curStep);
+    var finished = false;
+    if(i === 0) finished = !!state.done.warmup;
+    if(i === 1) finished = !!state.done.m1;
+    if(i === 2) finished = !!state.done.m2 && !!state.done.mini;
+    if(i === 3) finished = !!state.done.m3;
+    if(i === 4) finished = !!state.done.m4 && !!state.done.digit;
+    if(i === 5) finished = !!state.done.pass;
+    if(i === 6) finished = !!state.done.final;
+    d.classList.toggle("done", finished && i !== curStep);
+  });
+}
+function updateHud(){
+  $("hudName").textContent  = state.name || "—";
+  $("hudGroup").textContent = state.group || "—";
+  $("hudDone").textContent  = doneCount();
+  $("hudXp").textContent    = state.xp + " XP";
+  $("hudXp").style.display  = state.settings.showXp ? "" : "none";
+}
+function updateNav(){
+  var sc = SCREENS[cur];
+  var ok = sc.need() || state.settings.unlock;
+  $("btnNext").disabled = !ok || cur === SCREENS.length - 1;
+  $("btnBack").disabled = cur === 0;
+  $("navNote").textContent = ok ? "" : sc.msg;
+  $("navbar").style.display = (sc.id === "sc-welcome") ? "none" : "";
+}
+function goto(i){
+  if(i < 0 || i >= SCREENS.length) return;
+  cur = i; state.screen = i; save();
+  qsa(".screen").forEach(function(s){ s.classList.remove("on"); });
+  $(SCREENS[i].id).classList.add("on");
+  window.scrollTo(0,0);
+  renderSteps(); updateNav();
+  if(SCREENS[i].id === "sc-done") enterDone();
+}
+$("btnNext").addEventListener("click", function(){
+  if($("btnNext").disabled) return;           // không cho vượt nhiệm vụ chưa hoàn thành
+  goto(cur + 1);
+});
+$("btnBack").addEventListener("click", function(){
+  if($("btnBack").disabled) return;
+  goto(cur - 1);
+});
+
+/* =========================================================
+   5. NỀN BIT 0/1
+   ========================================================= */
+(function bitfield(){
+  var wrap = $("bitfield");
+  for(var i = 0; i < 16; i++){
+    var col = document.createElement("div");
+    col.className = "bitcol mono";
+    var s = "";
+    for(var j = 0; j < 46; j++) s += (Math.random() < .5 ? "0" : "1");
+    col.textContent = s;
+    col.style.left = (i * 6.4 + Math.random() * 3) + "%";
+    col.style.animationDuration = (16 + Math.random() * 18) + "s";
+    col.style.animationDelay = (-Math.random() * 20) + "s";
+    wrap.appendChild(col);
+  }
+})();
+
+/* =========================================================
+   6. MÀN HÌNH WELCOME
+   ========================================================= */
+$("inName").value = state.name;
+$("inGroup").value = state.group;
+$("btnStart").addEventListener("click", function(){
+  var n = $("inName").value.trim(), g = $("inGroup").value.trim();
+  if(!n || !g){ fb("fbLogin","no","Nhập họ tên và nhóm trước khi bắt đầu."); return; }
+  state.name = n; state.group = g; save(); updateHud(); hideFb("fbLogin");
+  goto(1);
+});
+[$("inName"), $("inGroup")].forEach(function(el){
+  el.addEventListener("input", function(){
+    state.name = $("inName").value.trim();
+    state.group = $("inGroup").value.trim();
+    save(); updateHud();
+  });
+});
+
+/* =========================================================
+   7. KHỞI ĐỘNG – HỒ SƠ DỮ LIỆU BÍ ẨN
+   ========================================================= */
+var TYPE_LABEL = { text:"Văn bản", number:"Số", logic:"Logic", media:"Đa phương tiện" };
+var ID_ROWS = [
+  { k:"Họ tên", v:"Nguyễn Minh An", t:"text" },
+  { k:"Mã học sinh", v:"001023", t:"text" },
+  { k:"Năm sinh", v:"2010", t:"number" },
+  { k:"Điểm trung bình", v:"8.7", t:"number" },
+  { k:"Đã xác thực", v:"TRUE", t:"logic" },
+  { k:"Ảnh đại diện", v:"🧑‍🎓 avatar.png", t:"media" },
+  { k:"Quốc tịch", v:"Việt Nam", t:"text" }
+];
+var idPick = state.answers.idPick || {};
+var idActive = -1;
+
+function renderIdRows(){
+  var wrap = $("idrows"); wrap.innerHTML = "";
+  ID_ROWS.forEach(function(r, i){
+    var picked = idPick[i];
+    var div = document.createElement("div");
+    div.className = "idrow" + (picked ? " answered" : "");
+    div.tabIndex = 0;
+    div.innerHTML = '<div><div class="k">' + r.k + '</div><div class="v">' + esc(r.v) + '</div></div>' +
+      '<span class="pick ' + (picked ? "" : "empty") + '">' + (picked ? TYPE_LABEL[picked] : "chưa dự đoán") + '</span>';
+    div.addEventListener("click", function(){ openIdQ(i); });
+    div.addEventListener("keydown", function(e){ if(e.key === "Enter") openIdQ(i); });
+    wrap.appendChild(div);
+  });
+}
+function openIdQ(i){
+  idActive = i;
+  var r = ID_ROWS[i];
+  $("idQTitle").textContent = r.k + ": " + r.v;
+  $("idQText").textContent = "Thông tin này nên được lưu dưới kiểu dữ liệu nào?";
+  var box = $("idOpts"); box.innerHTML = "";
+  ["text","number","logic","media"].forEach(function(t){
+    var b = document.createElement("button");
+    b.className = "opt" + (idPick[i] === t ? " sel" : "");
+    b.textContent = TYPE_LABEL[t];
+    b.addEventListener("click", function(){
+      idPick[i] = t;
+      state.answers.idPick = idPick; save();
+      renderIdRows(); openIdQ(i);
+      checkIdDone();
+    });
+    box.appendChild(b);
+  });
+  hideFb("fbId");
+}
+function checkIdDone(){
+  var n = Object.keys(idPick).length;
+  if(n >= ID_ROWS.length){
+    fb("fbId","ok","Em đã dự đoán xong cả thẻ. Giữ nguyên dự đoán của mình — cuối buổi chúng ta sẽ quay lại kiểm chứng.");
+    $("idConflict").style.display = "";
+    addXP("warm_predict", 20);
+  }else{
+    $("idQText").textContent = "Thông tin này nên được lưu dưới kiểu dữ liệu nào? (còn " + (ID_ROWS.length - n) + " dòng)";
+  }
+}
+qsa("#idConflict .opt").forEach(function(b){
+  b.addEventListener("click", function(){
+    qsa("#idConflict .opt").forEach(function(x){ x.classList.remove("sel"); });
+    b.classList.add("sel");
+    state.answers.idConflict = b.dataset.conf; save();
+  });
+});
+$("idExplain").value = state.answers.idExplain || "";
+$("btnSaveWarm").addEventListener("click", function(){
+  var t = $("idExplain").value.trim();
+  if(!state.answers.idConflict){ fb("fbWarm","no","Chọn phương án A hoặc B trước đã."); return; }
+  if(t.length < 10){ fb("fbWarm","no","Viết ít nhất một câu giải thích để nhóm khác hiểu ý em."); return; }
+  state.answers.idExplain = t; save();
+  addXP("warm_explain", 30);
+  fb("fbWarm","ok","Đã lưu lập luận của em. Hãy giữ lại ý này — Mission 1 sẽ thử thách nó.");
+  markDone("warmup");
+});
+</script>
+<script>
+"use strict";
+/* =========================================================
+   8. BỘ KÉO THẢ DÙNG CHUNG (hỗ trợ chuột + nhấn chọn)
+   ========================================================= */
+var picked = null;                    // thẻ đang được chọn bằng cách nhấn
+function setPicked(el){
+  if(picked) picked.classList.remove("picked");
+  picked = (picked === el) ? null : el;
+  if(picked) picked.classList.add("picked");
+}
+function makeDraggable(el){
+  el.draggable = true;
+  el.tabIndex = 0;
+  el.addEventListener("dragstart", function(e){
+    el.classList.remove("wrong");
+    e.dataTransfer.setData("text/plain", el.dataset.id);
+    e.dataTransfer.effectAllowed = "move";
+    setTimeout(function(){ el.style.opacity = ".45"; }, 0);
+  });
+  el.addEventListener("dragend", function(){ el.style.opacity = ""; });
+  el.addEventListener("click", function(){ setPicked(el); });
+  el.addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); setPicked(el); } });
+  return el;
+}
+function makeDropTarget(el, onDrop){
+  el.addEventListener("dragover", function(e){ e.preventDefault(); el.classList.add("over"); });
+  el.addEventListener("dragleave", function(){ el.classList.remove("over"); });
+  el.addEventListener("drop", function(e){
+    e.preventDefault(); el.classList.remove("over");
+    var id = e.dataTransfer.getData("text/plain");
+    var card = document.querySelector('[data-id="' + id + '"]');
+    if(card) onDrop(card);
+  });
+  el.addEventListener("click", function(e){
+    if(e.target.closest && e.target.closest(".dcard")) return;   // nhấn vào thẻ thì không tính là thả
+    if(picked){ var p = picked; setPicked(picked); onDrop(p); }
+  });
+}
+
+/* =========================================================
+   9. MISSION 1 – PHÂN LOẠI DỮ LIỆU
+   ========================================================= */
+var M1_CARDS = [
+  { id:"c1",  label:"Nguyễn Minh An", t:"text" },
+  { id:"c2",  label:"8.75", t:"number" },
+  { id:"c3",  label:"TRUE", t:"logic" },
+  { id:"c4",  label:"FALSE", t:"logic" },
+  { id:"c5",  label:"16", t:"number" },
+  { id:"c6",  label:"“Cần Thơ”", t:"text" },
+  { id:"c7",  label:"001023", t:"text" },
+  { id:"c8",  label:"🖼️ Ảnh chân dung", t:"media" },
+  { id:"c9",  label:"🎵 File nhạc", t:"media" },
+  { id:"c10", label:"🎬 Video", t:"media" },
+  { id:"c11", label:"32°C", t:"number" },
+  { id:"c12", label:"0987654321", t:"text" }
+];
+var M1_HINTS = {
+  c7:"Mã học sinh 001023: nếu lưu kiểu số thì các số 0 ở đầu sẽ biến mất. Em có bao giờ cộng hai mã học sinh với nhau không?",
+  c12:"Số điện thoại 0987654321 có được đem đi tính trung bình bao giờ không?",
+  c11:"32°C là một giá trị đo được, có thể so sánh cao thấp và tính trung bình.",
+  c3:"TRUE / FALSE chỉ nhận hai giá trị đúng hoặc sai."
+};
+var m1Place = state.answers.m1Place || {};   // id thẻ -> khu vực
+
+function renderM1(){
+  var pool = $("poolM1"); pool.innerHTML = "";
+  qsa("#zonesM1 .drop").forEach(function(d){ d.innerHTML = ""; });
+  M1_CARDS.forEach(function(c){
+    var el = document.createElement("div");
+    el.className = "dcard"; el.dataset.id = c.id; el.textContent = c.label;
+    makeDraggable(el);
+    el.addEventListener("dblclick", function(){ returnCard(c.id); });
+    var z = m1Place[c.id];
+    if(z){
+      el.addEventListener("click", function(e){ e.stopPropagation(); returnCard(c.id); });
+      qs('#zonesM1 .zone[data-zone="' + z + '"] .drop').appendChild(el);
+    }else{
+      pool.appendChild(el);
+    }
+  });
+  if(!pool.childNodes.length) pool.innerHTML = '<span style="color:var(--ink-soft);font-size:14px">Tất cả thẻ đã được xếp. Nhấn vào một thẻ trong khu vực để lấy nó ra.</span>';
+}
+function returnCard(id){
+  delete m1Place[id];
+  state.answers.m1Place = m1Place; save();
+  renderM1(); hideFb("fbM1");
+}
+qsa("#zonesM1 .zone").forEach(function(z){
+  makeDropTarget(z, function(card){
+    if(!M1_CARDS.some(function(c){ return c.id === card.dataset.id; })) return;
+    m1Place[card.dataset.id] = z.dataset.zone;
+    state.answers.m1Place = m1Place; save();
+    renderM1(); hideFb("fbM1");
+  });
+});
+makeDropTarget($("poolM1"), function(card){ returnCard(card.dataset.id); });
+
+$("btnCheckM1").addEventListener("click", function(){
+  var placed = Object.keys(m1Place).length;
+  if(placed < M1_CARDS.length){
+    fb("fbM1","hint","Còn " + (M1_CARDS.length - placed) + " thẻ chưa được xếp. Hãy quyết định cho từng thẻ trước khi kiểm tra.");
+    return;
+  }
+  var wrongIds = [], right = 0;
+  M1_CARDS.forEach(function(c){
+    var el = document.querySelector('[data-id="' + c.id + '"]');
+    el.classList.remove("right","wrong");
+    if(m1Place[c.id] === c.t){ el.classList.add("right"); right++; addXP("m1_" + c.id, 10, true); }
+    else { el.classList.add("wrong"); wrongIds.push(c.id); }
+  });
+  updateHud();
+  if(wrongIds.length === 0){
+    fb("fbM1","ok","✓ Chính xác cả 12 thẻ. Em đã phân loại dựa trên mục đích sử dụng chứ không chỉ nhìn hình thức.");
+    $("m1After").style.display = "";
+    showTrickyPopup();
+  }else{
+    var h = wrongIds.map(function(id){ return M1_HINTS[id]; }).filter(Boolean)[0];
+    fb("fbM1","no","Có " + wrongIds.length + " thẻ chưa nằm đúng chỗ. Hãy thử lại và tự hỏi: <b>dữ liệu này có thực sự được dùng để tính toán không?</b>" +
+      (h ? "<br>💡 " + h : ""));
+  }
+});
+function showTrickyPopup(){
+  if(state.answers.m1Popup) return;
+  state.answers.m1Popup = true; save();
+  setTimeout(function(){
+    fb("fbM1","hint","<b>Cùng thảo luận:</b> Mặc dù chỉ gồm chữ số, mã định danh và số điện thoại thường phù hợp với dữ liệu văn bản vì ta không thực hiện các phép cộng, trừ, nhân, chia trên chúng.<br><span style=\"color:var(--ink-soft)\">Quay lại phần khởi động: dự đoán ban đầu của em về mã 001023 có thay đổi không?</span>");
+  }, 900);
+}
+$("btnHintM1").addEventListener("click", function(){
+  fb("fbM1","hint","Ba câu hỏi giúp em quyết định:<br>1. Dữ liệu này có được đem đi tính toán không? → kiểu số.<br>2. Nó chỉ nhận đúng/sai? → kiểu logic.<br>3. Nó là ảnh, nhạc, video? → đa phương tiện.<br>Còn lại thường là văn bản.");
+});
+$("btnResetM1").addEventListener("click", function(){
+  m1Place = {}; state.answers.m1Place = {}; save(); renderM1(); hideFb("fbM1");
+});
+$("m1Reflect").value = state.answers.m1Reflect || "";
+$("btnM1Reflect").addEventListener("click", function(){
+  var t = $("m1Reflect").value.trim();
+  if(t.length < 10){ fb("fbM1R","no","Viết ít nhất một câu để nêu ý kiến của em."); return; }
+  state.answers.m1Reflect = t; save();
+  addXP("m1_reflect", 30);
+  fb("fbM1R","ok","Đã lưu. Cùng đối chiếu với phần chốt kiến thức bên dưới.");
+  $("kcM1").classList.add("show");
+  markDone("m1");
+});
+if(state.answers.m1Reflect){ $("m1After").style.display = ""; $("kcM1").classList.add("show"); }
+
+/* =========================================================
+   10. MISSION 2 – ASCII CODE BREAKER
+   ========================================================= */
+function toBin8(n){
+  var s = n.toString(2);
+  while(s.length < 8) s = "0" + s;
+  return s;
+}
+qsa("#m2Predict .opt").forEach(function(b){
+  b.addEventListener("click", function(){
+    qsa("#m2Predict .opt").forEach(function(x){ x.classList.remove("sel"); });
+    b.classList.add("sel");
+    state.answers.m2Predict = b.dataset.p; save();
+    addXP("m2_predict", 20);
+    fb("fbM2P","hint","Đã ghi nhận dự đoán. Chưa vội kết luận — hãy tự kiểm chứng bằng ASCII Explorer ngay bên dưới.");
+    $("m2Lab").style.display = "";
+    $("m2Task").style.display = "";
+    $("m2Rev").style.display = "";
+  });
+});
+var m2Chars = state.answers.m2Chars || [];
+function renderAscii(){
+  var raw = $("asciiIn").value;
+  var ch = raw ? Array.from(raw)[0] : "";
+  if(!ch){ fb("fbAscii","hint","Nhập một kí tự để xem mã của nó."); return; }
+  var code = ch.codePointAt(0);
+  if(code > 127){
+    fb("fbAscii","no","Kí tự <b>" + esc(ch) + "</b> nằm ngoài bảng ASCII chuẩn (mã " + code + " > 127). Hãy nhớ điều này — Mission 3 sẽ giải thích vì sao.");
+    $("ascChar").textContent = ch; $("ascDec").textContent = code; $("ascBin").textContent = "ngoài ASCII";
+    $("ascBits").innerHTML = "";
+    return;
+  }
+  hideFb("fbAscii");
+  $("asciiIn").value = ch;
+  $("ascChar").textContent = ch === " " ? "␣" : ch;
+  $("ascDec").textContent = code;
+  var bin = toBin8(code);
+  $("ascBin").textContent = bin;
+  $("ascBits").innerHTML = bin.split("").map(function(b){
+    return '<span class="bit ' + (b === "1" ? "one" : "") + '">' + b + '</span>';
+  }).join("");
+  if(m2Chars.indexOf(ch) < 0){ m2Chars.push(ch); state.answers.m2Chars = m2Chars; save(); }
+  if(m2Chars.length >= 3) addXP("m2_explore", 20);
+}
+$("asciiIn").addEventListener("input", renderAscii);
+
+var SGK = { S:83, G:71, K:75 };
+$("btnCheckSGK").addEventListener("click", function(){
+  var rows = [["S","sDec","sBin"],["G","gDec","gBin"],["K","kDec","kBin"]];
+  var ok = 0, msgs = [];
+  rows.forEach(function(r){
+    var ch = r[0], dec = $(r[1]).value.trim(), bin = $(r[2]).value.trim().replace(/\s/g,"");
+    var okDec = (parseInt(dec,10) === SGK[ch]);
+    var okBin = (bin === toBin8(SGK[ch]));
+    if(okDec && okBin){ ok++; addXP("m2_sgk_" + ch, 20, true); }
+    else if(!okDec) msgs.push("Kí tự <b>" + ch + "</b>: mã thập phân chưa đúng. Gõ chính kí tự đó vào ASCII Explorer phía trên để tra.");
+    else msgs.push("Kí tự <b>" + ch + "</b>: mã thập phân đúng rồi, phần nhị phân cần đủ 8 chữ số 0/1.");
+  });
+  updateHud();
+  state.answers.sgk = { s:$("sDec").value, g:$("gDec").value, k:$("kDec").value }; save();
+  if(ok === 3) fb("fbSGK","ok","✓ Cả ba kí tự đều đúng. Em vừa làm đúng việc mà máy tính làm hàng triệu lần mỗi giây.");
+  else fb("fbSGK","no","Đúng " + ok + "/3 dòng. " + msgs[0]);
+});
+$("btnHintSGK").addEventListener("click", function(){
+  fb("fbSGK","hint","Chữ in hoa A có mã 65, B là 66, C là 67... Em có thể đếm tiếp theo thứ tự bảng chữ cái, hoặc gõ thẳng kí tự vào ASCII Explorer để đối chiếu.");
+});
+$("btnResetSGK").addEventListener("click", function(){
+  ["sDec","sBin","gDec","gBin","kDec","kBin"].forEach(function(id){ $(id).value = ""; });
+  hideFb("fbSGK");
+});
+$("btnRev").addEventListener("click", function(){
+  var v = $("revIn").value.trim();
+  if(v === "A"){
+    addXP("m2_rev", 50);
+    fb("fbRev","ok","✓ Đúng. 01000001 ở hệ nhị phân là 65, và 65 là mã ASCII của chữ A.");
+    state.answers.rev = v; save();
+    var anim = $("m2Anim");
+    anim.style.display = "";
+    anim.innerHTML = "";
+    ["KÍ TỰ","↓","MÃ SỐ","↓","DÃY BIT"].forEach(function(t,i){
+      var s = document.createElement("span");
+      s.textContent = t; s.style.fontSize = (t === "↓" ? "1.2rem" : "1.1rem");
+      s.style.animationDelay = (i * .25) + "s";
+      anim.appendChild(s);
+    });
+    $("kcM2").classList.add("show");
+    markDone("m2");
+  }else{
+    fb("fbRev","no","Chưa đúng. Hãy đổi 01000001 sang hệ thập phân trước (128·0 + 64·1 + ... ), rồi tra số đó trong ASCII Explorer.");
+  }
+});
+if(state.answers.m2Predict){ $("m2Lab").style.display = ""; $("m2Task").style.display = ""; $("m2Rev").style.display = ""; }
+if(state.done.m2) $("kcM2").classList.add("show");
+renderAscii();
+
+/* =========================================================
+   11. MINI CHALLENGE – ASCII CÓ ĐỦ KHÔNG?
+   ========================================================= */
+$("btnMiniRun").addEventListener("click", function(){
+  var stream = $("miniStream"); stream.innerHTML = "";
+  var list = ["A","B","C","ă","ộ","đ","中","한","😀"];
+  list.forEach(function(ch, i){
+    var s = document.createElement("span");
+    var code = ch.codePointAt(0);
+    var inAscii = code <= 127;
+    s.textContent = ch;
+    s.title = "U+" + code.toString(16).toUpperCase();
+    s.style.animationDelay = (i * .28) + "s";
+    s.style.color = inAscii ? "var(--green)" : "var(--red)";
+    s.style.borderBottom = "3px solid " + (inAscii ? "var(--green)" : "var(--red)");
+    stream.appendChild(s);
+  });
+  setTimeout(function(){
+    fb("fbMini","hint","Ba kí tự đầu lọt qua bảng ASCII. Sáu kí tự sau thì không: mã của chúng đều lớn hơn 127, vượt ngoài 128 mã mà ASCII có.");
+    $("miniQ").style.display = "";
+  }, list.length * 300);
+});
+qsa("#miniOpts .opt").forEach(function(b){
+  b.addEventListener("click", function(){
+    var ans = b.dataset.m;
+    state.answers.mini = ans; save();
+    if(ans === "B"){
+      b.classList.add("ok");
+      addXP("mini", 30);
+      fb("fbMiniQ","ok","✓ Đúng. Thế giới cần một hệ thống mã kí tự rộng hơn ASCII. Mission 3 đã được mở khoá.");
+      markDone("mini");
+    }else{
+      b.classList.add("no");
+      fb("fbMiniQ","no","Chưa hợp lí. Hãy nghĩ lại: ASCII chỉ có 128 mã, trong khi riêng tiếng Việt, tiếng Trung, tiếng Hàn đã cần hàng nghìn kí tự. Thử lại nhé.");
+      setTimeout(function(){ b.classList.remove("no"); }, 1400);
+    }
+  });
+});
+if(state.answers.mini){ $("miniQ").style.display = ""; }
+</script>
+<script>
+"use strict";
+/* =========================================================
+   12. CÔNG CỤ UNICODE / UTF-8 (dùng TextEncoder thật)
+   ========================================================= */
+var ENC = (typeof TextEncoder !== "undefined") ? new TextEncoder() : null;
+function utf8Bytes(str){
+  if(ENC) return Array.prototype.slice.call(ENC.encode(str));
+  // Dự phòng nếu trình duyệt quá cũ: tự mã hoá UTF-8
+  var out = [], i, cp, s = Array.from(str);
+  for(i = 0; i < s.length; i++){
+    cp = s[i].codePointAt(0);
+    if(cp < 0x80) out.push(cp);
+    else if(cp < 0x800){ out.push(0xC0 | (cp >> 6), 0x80 | (cp & 63)); }
+    else if(cp < 0x10000){ out.push(0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63)); }
+    else { out.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63)); }
+  }
+  return out;
+}
+function hex2(n){ var s = n.toString(16).toUpperCase(); return s.length < 2 ? "0" + s : s; }
+function codePointLabel(cp){
+  var s = cp.toString(16).toUpperCase();
+  while(s.length < 4) s = "0" + s;
+  return "U+" + s;
+}
+function analyzeChar(ch){
+  var cp = ch.codePointAt(0);          // codePointAt xử lí đúng cả emoji ngoài BMP
+  var bytes = utf8Bytes(ch);
+  return {
+    ch: ch,
+    cp: cp,
+    u: codePointLabel(cp),
+    hex: bytes.map(hex2).join(" "),
+    bin: bytes.map(function(b){ return toBin8(b); }).join(" "),
+    n: bytes.length
+  };
+}
+
+/* =========================================================
+   13. MISSION 3 – UNICODE RESCUE
+   ========================================================= */
+var UNI_TRY = ["A","ă","ộ","中","😀"];
+var tried = state.tried || {};
+function renderUniTry(){
+  var wrap = $("uniTry"); wrap.innerHTML = "";
+  UNI_TRY.forEach(function(c){
+    var b = document.createElement("button");
+    b.className = "trybtn" + (tried[c] ? " done" : "");
+    b.textContent = c;
+    b.addEventListener("click", function(){ $("uniIn").value = c; renderUni(); });
+    wrap.appendChild(b);
+  });
+  var n = Object.keys(tried).filter(function(k){ return UNI_TRY.indexOf(k) >= 0; }).length;
+  $("uniCount").textContent = n;
+  if(n >= UNI_TRY.length){
+    addXP("m3_explore", 75);
+    $("m3After").style.display = "";
+  }
+}
+function renderUni(){
+  var raw = $("uniIn").value;
+  var arr = Array.from(raw);
+  if(!arr.length){ $("uniOut").innerHTML = ""; $("uniChar").textContent = ""; return; }
+  var ch = arr[0];
+  $("uniIn").value = ch;
+  var a = analyzeChar(ch);
+  $("uniChar").textContent = ch;
+  $("uniOut").innerHTML =
+    cell("Kí tự", esc(ch)) +
+    cell("Unicode code point", a.u) +
+    cell("UTF-8 hex", '<span class="mono">' + a.hex + '</span>') +
+    cell("UTF-8 nhị phân", '<span class="mono" style="font-size:.85rem">' + a.bin + '</span>') +
+    cell("Số byte UTF-8", a.n + " byte");
+  if(UNI_TRY.indexOf(ch) >= 0 && !tried[ch]){
+    tried[ch] = true; state.tried = tried; save(); addXP("m3_char_" + a.cp, 0, true);
+  }
+  renderUniTry();
+}
+function cell(k, v){
+  return '<div class="cell"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+}
+$("uniIn").addEventListener("input", renderUni);
+$("m3Reflect").value = state.answers.m3Reflect || "";
+$("btnM3Reflect").addEventListener("click", function(){
+  var t = $("m3Reflect").value.trim();
+  if(t.length < 10){ fb("fbM3R","no","Viết 1–2 câu bằng lời của em."); return; }
+  state.answers.m3Reflect = t; save();
+  addXP("m3_reflect", 45);
+  fb("fbM3R","ok","Đã lưu. Đối chiếu với phần chốt kiến thức bên dưới xem em đã nói đủ ý chưa.");
+  $("kcM3").classList.add("show");
+  markDone("m3");
+});
+if(state.answers.m3Reflect){ $("m3After").style.display = ""; $("kcM3").classList.add("show"); }
+renderUni();
+
+/* =========================================================
+   14. MISSION 4 – KÍNH HIỂN VI VĂN BẢN
+   ========================================================= */
+var lastAnalysis = [];
+$("textIn").value = state.answers.textIn || "Em học Tin học ở Cần Thơ.";
+$("btnScan").addEventListener("click", function(){
+  var text = $("textIn").value;
+  if(!text.trim()){ fb("fbChip","hint","Nhập một câu tiếng Việt rồi bấm SOI DỮ LIỆU."); return; }
+  state.answers.textIn = text; save();
+  var chars = Array.from(text);
+  lastAnalysis = chars.map(analyzeChar);
+  var totalBytes = lastAnalysis.reduce(function(s,a){ return s + a.n; }, 0);
+  var maxB = lastAnalysis.reduce(function(m,a){ return Math.max(m, a.n); }, 0);
+  $("stChars").textContent = chars.length;
+  $("stBytes").textContent = totalBytes;
+  $("stMax").textContent = maxB;
+  $("textStats").style.display = "";
+  var wrap = $("charCards"); wrap.innerHTML = "";
+  lastAnalysis.forEach(function(a, i){
+    var d = document.createElement("div");
+    d.className = "chip" + (a.n > 1 ? " multi" : "");
+    d.innerHTML = '<div class="c">' + (a.ch === " " ? "␣" : esc(a.ch)) + '</div>' +
+                  '<div class="u">' + a.u + '</div>' +
+                  '<div class="b mono">' + a.hex + '</div>' +
+                  '<div class="b">' + a.n + ' byte</div>';
+    d.tabIndex = 0;
+    d.addEventListener("click", function(){ chipDetail(a); });
+    d.addEventListener("mouseenter", function(){ chipDetail(a); });
+    wrap.appendChild(d);
+  });
+  $("pipeText").textContent = '"' + text.slice(0, 22) + (text.length > 22 ? "…" : "") + '"';
+  fb("fbChip","hint","Thẻ viền vàng là kí tự cần nhiều hơn 1 byte. Di chuột hoặc nhấn vào một thẻ để xem chi tiết.");
+  addXP("m4_scan", 50);
+  $("m4After").style.display = "";
+});
+function chipDetail(a){
+  fb("fbChip","hint","<b style=\"font-size:1.3rem\">" + esc(a.ch === " " ? "␣" : a.ch) + "</b> · Unicode " + a.u +
+    " · UTF-8 hex <span class=\"mono\">" + a.hex + "</span> · nhị phân <span class=\"mono\">" + a.bin + "</span> · " + a.n + " byte");
+}
+$("btnBits").addEventListener("click", function(){
+  if(!lastAnalysis.length){ fb("fbChip","hint","Bấm SOI DỮ LIỆU trước đã."); return; }
+  var dump = $("bitDump");
+  var showAll = dump.dataset.all === "1";
+  var list = showAll ? lastAnalysis : lastAnalysis.slice(0, 6);
+  dump.innerHTML = list.map(function(a){
+    return '<div>' + esc(a.ch === " " ? "␣" : a.ch) + ' → ' + a.bin + '</div>';
+  }).join("") +
+  (lastAnalysis.length > 6 ? '<div style="margin-top:8px"><button class="btn ghost" id="btnMoreBits">' +
+    (showAll ? "Thu gọn" : "Mở rộng toàn bộ " + lastAnalysis.length + " kí tự") + '</button></div>' : "");
+  dump.classList.add("show");
+  var more = $("btnMoreBits");
+  if(more) more.addEventListener("click", function(){
+    dump.dataset.all = showAll ? "0" : "1";
+    $("btnBits").click();
+  });
+  addXP("m4_bits", 30);
+  markDone("m4");
+});
+if(state.done.m4){ $("m4After").style.display = ""; }
+
+/* =========================================================
+   15. SỐ HOÁ VĂN BẢN – SẮP THỨ TỰ
+   ========================================================= */
+var ORDER = [
+  { id:"o1", label:"Thế giới thực (trang giấy, lời nói, ý tưởng)" },
+  { id:"o2", label:"Thu nhận (bàn phím, máy quét, micro)" },
+  { id:"o3", label:"Nhận dạng / nhập kí tự" },
+  { id:"o4", label:"Văn bản số trong máy tính" },
+  { id:"o5", label:"Mã hoá thành byte (UTF-8)" },
+  { id:"o6", label:"Lưu trữ trên bộ nhớ" }
+];
+var orderPlace = state.answers.orderPlace || {};   // id -> chỉ số ô
+
+function renderOrder(){
+  var pool = $("poolOrder"); pool.innerHTML = "";
+  var slots = $("orderSlots"); slots.innerHTML = "";
+  ORDER.forEach(function(_, i){
+    var s = document.createElement("div");
+    s.className = "orderslot"; s.dataset.slot = i;
+    s.innerHTML = '<span class="idx">' + (i + 1) + '</span>';
+    makeDropTarget(s, function(card){
+      var id = card.dataset.id;
+      if(!ORDER.some(function(o){ return o.id === id; })) return;
+      Object.keys(orderPlace).forEach(function(k){ if(orderPlace[k] === i) delete orderPlace[k]; });
+      orderPlace[id] = i;
+      state.answers.orderPlace = orderPlace; save();
+      renderOrder(); hideFb("fbOrder");
+    });
+    slots.appendChild(s);
+  });
+  // xáo thứ tự hiển thị trong pool để học sinh phải suy nghĩ
+  var shuffled = ORDER.slice().sort(function(a,b){ return a.id < b.id ? 1 : -1; });
+  shuffled.forEach(function(o){
+    var el = document.createElement("div");
+    el.className = "dcard"; el.dataset.id = o.id; el.textContent = o.label;
+    makeDraggable(el);
+    var slot = orderPlace[o.id];
+    if(slot !== undefined){
+      el.addEventListener("click", function(e){
+        e.stopPropagation();
+        delete orderPlace[o.id]; state.answers.orderPlace = orderPlace; save(); renderOrder();
+      });
+      qs('.orderslot[data-slot="' + slot + '"]', slots).appendChild(el);
+    }else{
+      pool.appendChild(el);
+    }
+  });
+  if(!pool.childNodes.length) pool.innerHTML = '<span style="color:var(--ink-soft);font-size:14px">Đã xếp hết. Nhấn vào một bước để lấy ra khỏi ô.</span>';
+}
+makeDropTarget($("poolOrder"), function(card){
+  if(orderPlace[card.dataset.id] !== undefined){
+    delete orderPlace[card.dataset.id]; state.answers.orderPlace = orderPlace; save(); renderOrder();
+  }
+});
+$("btnCheckOrder").addEventListener("click", function(){
+  if(Object.keys(orderPlace).length < ORDER.length){
+    fb("fbOrder","hint","Còn bước chưa được xếp vào ô nào.");
+    return;
+  }
+  var ok = true;
+  ORDER.forEach(function(o, i){
+    var slotEl = qs('.orderslot[data-slot="' + orderPlace[o.id] + '"]');
+    if(orderPlace[o.id] === i){ slotEl.classList.add("right"); }
+    else { ok = false; slotEl.classList.remove("right"); }
+  });
+  if(ok){
+    fb("fbOrder","ok","✓ Đúng thứ tự. Đây chính là con đường mà mọi văn bản đi vào máy tính.");
+    addXP("digit_order", 70);
+    $("kcDigit").classList.add("show");
+    markDone("digit");
+  }else{
+    fb("fbOrder","no","Chưa đúng thứ tự. Gợi ý: bắt đầu từ thứ đang tồn tại ngoài đời thật, và kết thúc ở nơi dữ liệu nằm lại lâu dài.");
+  }
+});
+$("btnResetOrder").addEventListener("click", function(){
+  orderPlace = {}; state.answers.orderPlace = {}; save(); renderOrder(); hideFb("fbOrder");
+});
+</script>
+<script>
+"use strict";
+/* =========================================================
+   16. DATA PASSPORT
+   ========================================================= */
+var PASS_Q = [
+  ["p1","Các kiểu dữ liệu chính em đã khám phá"],
+  ["p2","Dữ liệu số khác dữ liệu văn bản ở điểm nào"],
+  ["p3","ASCII dùng để làm gì"],
+  ["p4","Vì sao ASCII không đủ cho mọi ngôn ngữ"],
+  ["p5","Unicode giải quyết vấn đề gì"],
+  ["p6","UTF-8 là gì"],
+  ["p7","Chuỗi biểu diễn văn bản"],
+  ["p8","Điều làm em bất ngờ nhất"]
+];
+["p1","p2","p3","p4","p5","p6","p8","p7a","p7b","p7c"].forEach(function(id){
+  var el = $(id);
+  if(state.answers[id]) el.value = state.answers[id];
+  el.addEventListener("input", function(){ state.answers[id] = el.value; save(); });
+});
+$("btnMakePass").addEventListener("click", function(){
+  var missing = [];
+  ["p1","p2","p3","p4","p5","p6","p8"].forEach(function(id, i){
+    if(($(id).value || "").trim().length < 5) missing.push(i + 1 <= 6 ? (i + 1) : 8);
+  });
+  var chain = [$("p7a").value.trim(), $("p7b").value.trim(), $("p7c").value.trim()];
+  if(chain.some(function(x){ return !x; })) missing.push(7);
+  if(missing.length){
+    fb("fbPass","no","Còn thiếu câu: " + missing.join(", ") + ". Hãy trả lời bằng chính lời của em, không cần dài.");
+    return;
+  }
+  // kiểm tra nhẹ chuỗi câu 7
+  var norm = chain.map(function(s){ return s.toLowerCase().replace(/\s+/g," ").trim(); });
+  var okChain = /k[ií] t[uự]/.test(norm[0]) && /m[aã]/.test(norm[1]) && /bit/.test(norm[2]);
+  PASS_Q.forEach(function(q){ state.answers[q[0]] = $(q[0]) ? $(q[0]).value : state.answers[q[0]]; });
+  state.answers.p7chain = chain; save();
+  addXP("passport", 100);
+  markDone("pass");
+  buildPassport();
+  fb("fbPass", okChain ? "ok" : "hint",
+    okChain ? "✓ Hộ chiếu đã tạo. Chuỗi câu 7 của em khớp với mô hình: Văn bản → Kí tự → Mã kí tự → Byte → Bit."
+            : "Hộ chiếu đã tạo. Riêng câu 7, hãy đối chiếu lại với chuỗi chuẩn: Văn bản → Kí tự → Mã kí tự → Byte → Bit.");
+});
+function buildPassport(){
+  $("ppName").textContent = state.name || "—";
+  $("ppGroup").textContent = state.group || "—";
+  $("ppBadge").textContent = badgeOf(state.xp);
+  $("ppXp").textContent = state.xp + " XP";
+  $("ppDate").textContent = new Date().toLocaleDateString("vi-VN");
+  var body = PASS_Q.map(function(q){
+    var val;
+    if(q[0] === "p7"){
+      var c = state.answers.p7chain || ["","",""];
+      val = "Văn bản → " + c[0] + " → " + c[1] + " → Byte → " + c[2];
+    }else{
+      val = state.answers[q[0]] || "";
+    }
+    return '<div class="pp-item"><div class="q">' + q[1] + '</div><div class="a">' + esc(val) + '</div></div>';
+  }).join("");
+  $("ppBody").innerHTML = body;
+  $("passport").classList.add("show");
+}
+$("btnPrint").addEventListener("click", function(){
+  if(!$("passport").classList.contains("show")) buildPassport();
+  setTimeout(function(){ window.print(); }, 120);
+});
+
+/* =========================================================
+   17. XUẤT KẾT QUẢ HỌC SINH
+   ========================================================= */
+function exportStudentResult(){
+  var data = {
+    hoTen: state.name, nhom: state.group, xp: state.xp, badge: badgeOf(state.xp),
+    hoanThanh: doneCount() + "/7", thoiGian: new Date().toISOString(),
+    hoatDong: state.done, cauTraLoi: state.answers
+  };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "datalab_" + (state.name || "hocsinh").replace(/\s+/g,"_") + ".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast("Đã xuất file kết quả");
+}
+$("btnExport").addEventListener("click", exportStudentResult);
+$("btnExport2").addEventListener("click", exportStudentResult);
+
+/* =========================================================
+   18. FINAL CHALLENGE – 8 CÂU
+   ========================================================= */
+var QUIZ = [
+  { q:"Loại nào sau đây là dữ liệu logic?",
+    a:["“Cần Thơ”","8.5","TRUE","Một bức ảnh"], c:2,
+    e:"Dữ liệu logic chỉ nhận một trong hai giá trị đúng hoặc sai, tức TRUE hoặc FALSE." },
+  { q:"Số điện thoại 0912345678 thường nên được lưu kiểu nào?",
+    a:["Số","Văn bản","Logic","Hình ảnh"], c:1,
+    e:"Số điện thoại là mã định danh, không dùng để tính toán, và lưu kiểu số sẽ mất chữ số 0 ở đầu." },
+  { q:"ASCII chuẩn ban đầu dùng bao nhiêu bit?",
+    a:["4","7","8","16"], c:1,
+    e:"ASCII chuẩn dùng 7 bit cho mỗi kí tự." },
+  { q:"ASCII chuẩn có bao nhiêu mã?",
+    a:["64","128","256","1024"], c:1,
+    e:"Với 7 bit ta có 2⁷ = 128 mã, đánh số từ 0 đến 127." },
+  { q:"Vì sao cần Unicode?",
+    a:["Để tăng tốc CPU.","Để hỗ trợ rất nhiều hệ chữ và kí tự trên thế giới.","Để lưu hình ảnh.","Để nén âm thanh."], c:1,
+    e:"128 mã của ASCII không đủ cho hàng nghìn kí tự của các ngôn ngữ trên thế giới." },
+  { q:"Phát biểu nào đúng?",
+    a:["Unicode và UTF-8 hoàn toàn giống nhau.",
+       "Unicode là hệ thống mã kí tự; UTF-8 là một cách mã hoá Unicode thành byte.",
+       "UTF-8 chỉ dùng cho tiếng Anh.",
+       "Unicode chỉ biểu diễn được 256 kí tự."], c:1,
+    e:"Unicode gán mã cho kí tự; UTF-8 là cách biến mã đó thành byte để lưu trữ." },
+  { q:"Chuỗi nào mô tả hợp lí quá trình biểu diễn văn bản?",
+    a:["Bit → ảnh → văn bản","Văn bản → kí tự → mã → byte → bit","Số → âm thanh → chữ","Ảnh → logic → ASCII"], c:1,
+    e:"Văn bản được tách thành kí tự, mỗi kí tự có mã, mã được mã hoá thành byte, mỗi byte là 8 bit." },
+  { q:"“Mã học sinh 00125” nhất thiết phải là dữ liệu số.",
+    a:["Đúng","Sai"], c:1,
+    e:"Sai. Đây là mã định danh, nên lưu dạng văn bản để giữ được các chữ số 0 ở đầu." }
+];
+function renderQuiz(){
+  var wrap = $("quizWrap"); wrap.innerHTML = "";
+  var saved = state.answers.quiz || {};
+  QUIZ.forEach(function(item, i){
+    var card = document.createElement("div");
+    card.className = "qcard";
+    card.innerHTML = '<div class="qnum">CÂU ' + (i + 1) + '</div><h3>' + esc(item.q) + '</h3>';
+    var opts = document.createElement("div");
+    opts.className = "opts";
+    item.a.forEach(function(text, j){
+      var b = document.createElement("button");
+      b.className = "opt";
+      b.textContent = String.fromCharCode(65 + j) + ". " + text;
+      b.addEventListener("click", function(){ answerQuiz(i, j, opts, card); });
+      opts.appendChild(b);
+    });
+    card.appendChild(opts);
+    var ex = document.createElement("div");
+    ex.className = "feedback"; ex.id = "qex" + i;
+    card.appendChild(ex);
+    wrap.appendChild(card);
+    if(saved[i] !== undefined && saved[i] === item.c){
+      answerQuiz(i, item.c, opts, card, true);
+    }
+  });
+}
+function answerQuiz(i, j, opts, card, silent){
+  var item = QUIZ[i];
+  var saved = state.answers.quiz || {};
+  var buttons = qsa(".opt", opts);
+  if(j === item.c){
+    buttons.forEach(function(b, k){ b.disabled = true; b.classList.remove("no","sel"); if(k === j) b.classList.add("ok"); });
+    saved[i] = j; state.answers.quiz = saved; save();
+    if(!silent) addXP("quiz_" + i, 25);
+    fb("qex" + i, "ok", "✓ Chính xác. " + item.e);
+  }else{
+    buttons[j].classList.add("no");
+    fb("qex" + i, "no", "Chưa chính xác. " + item.e + " Hãy thử lại.");
+    setTimeout(function(){ buttons[j].classList.remove("no"); }, 1600);
+  }
+  var done = QUIZ.filter(function(_, k){ return (state.answers.quiz || {})[k] !== undefined; }).length;
+  if(done === QUIZ.length){
+    fb("fbQuiz","ok","Hoàn thành cả 8 câu. Em đã giải mã xong dữ liệu — mời sang phiếu 3–2–1.");
+    markDone("final");
+  }
+}
+
+/* =========================================================
+   19. EXIT TICKET
+   ========================================================= */
+["e1","e2","e3","e4","e5","e6"].forEach(function(id){
+  var el = $(id);
+  if(state.answers[id]) el.value = state.answers[id];
+  el.addEventListener("input", function(){ state.answers[id] = el.value; save(); });
+});
+$("btnExit").addEventListener("click", function(){
+  var empty = ["e1","e2","e3","e4","e5","e6"].filter(function(id){ return !($(id).value || "").trim(); });
+  if(empty.length){ fb("fbExit","no","Còn " + empty.length + " ô trống. Viết ngắn gọn cũng được."); return; }
+  addXP("exit", 50);
+  markDone("exit");
+  fb("fbExit","ok","Đã lưu phiếu của em. Chuyển sang màn hình tổng kết.");
+  setTimeout(function(){ goto(SCREENS.length - 1); }, 700);
+});
+
+/* =========================================================
+   20. MÀN HÌNH KẾT THÚC
+   ========================================================= */
+function confetti(){
+  var colors = ["#00b3c6","#ffc531","#18a361","#ffffff","#6ee7f5"];
+  for(var i = 0; i < 70; i++){
+    (function(i){
+      setTimeout(function(){
+        var c = document.createElement("div");
+        c.className = "confetti";
+        c.style.left = (Math.random() * 100) + "%";
+        c.style.background = colors[i % colors.length];
+        c.style.animationDuration = (2.4 + Math.random() * 1.8) + "s";
+        document.body.appendChild(c);
+        setTimeout(function(){ c.remove(); }, 4200);
+      }, i * 35);
+    })(i);
+  }
+}
+function enterDone(){
+  $("dnName").textContent = state.name || "—";
+  $("dnGroup").textContent = state.group || "—";
+  $("dnDone").textContent = doneCount();
+  $("dnXp").textContent = state.xp;
+  $("dnBadge").textContent = badgeOf(state.xp);
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(!reduce) confetti();
+}
+qsa("#finalOpts .opt").forEach(function(b){
+  b.addEventListener("click", function(){
+    qsa("#finalOpts .opt").forEach(function(x){ x.classList.remove("sel","ok","no"); });
+    state.answers.finalChoice = b.dataset.f; save();
+    if(b.dataset.f === "2"){ b.classList.add("ok"); fb("fbFinalC","ok","Đúng rồi. Đó chính là con đường: kí tự → mã → byte → bit."); }
+    else { b.classList.add("no"); fb("fbFinalC","no","Hãy nhớ lại Mission 4: cái máy tính thực sự lưu là dãy byte, mỗi byte gồm 8 bit."); }
+  });
+});
+$("finalWrite").value = state.answers.finalWrite || "";
+$("btnFinalSave").addEventListener("click", function(){
+  state.answers.finalWrite = $("finalWrite").value.trim(); save();
+  fb("fbFinalC","ok","Đã lưu kết luận của em.");
+});
+$("btnReplay").addEventListener("click", function(){ goto(2); });
+
+/* =========================================================
+   21. CHẾ ĐỘ GIÁO VIÊN
+   ========================================================= */
+var ANSWER_KEY = [
+  "<b>Thẻ Digital ID:</b> Họ tên – văn bản · Mã học sinh – văn bản · Năm sinh – số · Điểm TB – số · Đã xác thực – logic · Ảnh đại diện – đa phương tiện · Quốc tịch – văn bản.",
+  "<b>Mission 1:</b> Văn bản: Nguyễn Minh An, “Cần Thơ”, 001023, 0987654321 · Số: 8.75, 16, 32°C · Logic: TRUE, FALSE · Đa phương tiện: ảnh, nhạc, video.",
+  "<b>Mission 2:</b> S = 83 = 01010011 · G = 71 = 01000111 · K = 75 = 01001011 · 01000001 = A.",
+  "<b>Mini challenge:</b> đáp án B.",
+  "<b>Mission 3:</b> A = U+0041, 1 byte · ă = U+0103, 2 byte · ộ = U+1ED9, 3 byte · 中 = U+4E2D, 3 byte · 😀 = U+1F600, 4 byte.",
+  "<b>Số hoá:</b> Thế giới thực → Thu nhận → Nhận dạng/nhập → Văn bản số → Mã hoá → Lưu trữ.",
+  "<b>Passport câu 7:</b> Văn bản → Kí tự → Mã kí tự → Byte → Bit.",
+  "<b>Final Challenge:</b> 1-C, 2-B, 3-B, 4-B, 5-B, 6-B, 7-B, 8-B."
+].join("<br><br>");
+$("answerKey").innerHTML = ANSWER_KEY;
+
+$("btnTeacher").addEventListener("click", function(){
+  var t = $("teacher");
+  t.classList.toggle("open");
+  t.setAttribute("aria-hidden", t.classList.contains("open") ? "false" : "true");
+});
+$("tFull").addEventListener("click", function(){
+  if(!document.fullscreenElement){
+    if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  }else if(document.exitFullscreen) document.exitFullscreen();
+});
+$("tKey").addEventListener("click", function(){
+  state.settings.showKey = !state.settings.showKey; save();
+  $("answerKey").classList.toggle("show", state.settings.showKey);
+  toast(state.settings.showKey ? "Đang hiện đáp án chuẩn" : "Đã ẩn đáp án");
+});
+$("tXp").addEventListener("click", function(){
+  state.settings.showXp = !state.settings.showXp; save(); updateHud();
+  toast(state.settings.showXp ? "Hiện điểm XP" : "Ẩn điểm XP");
+});
+$("tUnlock").addEventListener("click", function(){
+  state.settings.unlock = !state.settings.unlock; save(); updateNav();
+  toast(state.settings.unlock ? "Đã mở khoá mọi nhiệm vụ" : "Đã bật lại khoá nhiệm vụ");
+});
+$("tReset").addEventListener("click", function(){
+  if(confirm("Xoá toàn bộ tiến độ, câu trả lời và điểm trên máy này?")) resetProgress();
+});
+$("tExport").addEventListener("click", exportStudentResult);
+function resetProgress(){
+  Store.clear();
+  state = blankState();
+  save();
+  location.reload();
+}
+(function buildJump(){
+  var wrap = $("tJump");
+  SCREENS.forEach(function(sc, i){
+    var name = { "sc-welcome":"Welcome","sc-bigq":"Big Question","sc-warmup":"Khởi động – Hồ sơ dữ liệu",
+      "sc-m1":"Mission 1 – Phân loại","sc-m2":"Mission 2 – ASCII","sc-mini":"Mini – ASCII có đủ?",
+      "sc-m3":"Mission 3 – Unicode","sc-m4":"Mission 4 – Kính hiển vi","sc-digit":"Số hoá văn bản",
+      "sc-pass":"Data Passport","sc-final":"Final Challenge","sc-exit":"Exit Ticket","sc-done":"Tổng kết" }[sc.id];
+    var b = document.createElement("button");
+    b.className = "tbtn"; b.textContent = (i + 1) + ". " + name;
+    b.addEventListener("click", function(){ goto(i); });
+    wrap.appendChild(b);
+  });
+})();
+
+/* =========================================================
+   22. KHỞI ĐỘNG TRANG
+   ========================================================= */
+renderIdRows();
+if(Object.keys(idPick).length){ checkIdDone(); }
+renderM1();
+renderOrder();
+renderQuiz();
+updateHud();
+renderSteps();
+if(state.settings.showKey) $("answerKey").classList.add("show");
+goto(state.screen && state.name ? Math.min(state.screen, SCREENS.length - 1) : 0);
+if(state.name && cur === 0) $("navbar").style.display = "none";
+window.resetProgress = resetProgress;
+window.exportStudentResult = exportStudentResult;
+</script>
+</body>
+</html>
