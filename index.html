@@ -280,6 +280,12 @@ label.fld{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);mar
 #teacher .tbtn:hover{background:rgba(255,255,255,.16)}
 .answerkey{display:none;background:rgba(255,197,49,.1);border:1px solid rgba(255,197,49,.4);border-radius:10px;padding:10px;font-size:13px;margin-top:10px}
 .answerkey.show{display:block}
+.tlock{position:fixed;inset:0;background:rgba(5,15,28,.6);z-index:95;display:none;align-items:center;justify-content:center;padding:16px}
+.tlock.show{display:flex}
+.tlock .box{background:#fff;border-radius:16px;padding:24px 26px;width:300px;box-shadow:var(--shadow);text-align:center}
+.tlock input{text-align:center;letter-spacing:6px;font-size:1.3rem;margin-top:8px}
+.tlock .err{color:var(--red);font-size:13px;margin-top:8px;display:none;min-height:1.2em}
+.tlock .err.show{display:block}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--navy);
   color:#bff3fb;padding:11px 22px;border-radius:999px;z-index:90;opacity:0;transition:.3s;box-shadow:var(--shadow);border:1px solid var(--cyan)}
 .toast.show{opacity:1;transform:translateX(-50%)}
@@ -868,21 +874,44 @@ label.fld{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);mar
      ========================================================= -->
 <aside id="teacher" aria-hidden="true">
   <h3>Teacher Mode</h3>
-  <p style="font-size:13px;color:#9fc2d6">Bảng điều khiển dành cho giáo viên. Học sinh không thấy bảng này trừ khi mở bằng nút ⚙.</p>
+  <p style="font-size:13px;color:#9fc2d6">Bảng điều khiển dành cho giáo viên. Học sinh cần đúng mã PIN mới mở được bảng này.</p>
   <button class="tbtn" id="tFull">⛶ Toàn màn hình</button>
   <button class="tbtn" id="tKey">🔑 Hiện / ẩn đáp án chuẩn</button>
   <button class="tbtn" id="tXp">🏅 Bật / tắt hiển thị XP</button>
   <button class="tbtn" id="tUnlock">🔓 Bật / tắt khoá nhiệm vụ</button>
   <button class="tbtn" id="tReset">♻ Reset toàn bộ tiến độ</button>
   <button class="tbtn" id="tExport">💾 Xuất kết quả học sinh</button>
+  <button class="tbtn" id="tSheetTest">📤 Gửi thử lên Google Sheet</button>
+  <p id="sheetStatus" style="font-size:12px;color:#9fc2d6;margin-top:-2px"></p>
   <h3 style="margin-top:18px">Chuyển nhanh</h3>
   <div id="tJump"></div>
   <div class="answerkey" id="answerKey"></div>
 </aside>
 
+<div class="tlock" id="tlock">
+  <div class="box">
+    <h3>Teacher Mode</h3>
+    <p class="lead" style="font-size:13px">Nhập mã PIN của giáo viên để mở bảng điều khiển.</p>
+    <input type="password" id="tlockInput" inputmode="numeric" maxlength="10" placeholder="••••">
+    <div class="err" id="tlockErr">Mã PIN chưa đúng, thử lại nhé.</div>
+    <div class="btnrow" style="justify-content:center">
+      <button class="btn ghost" id="tlockCancel">Huỷ</button>
+      <button class="btn" id="tlockOk">Mở khoá</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
 "use strict";
+/* =========================================================
+   0. CẤU HÌNH DÀNH RIÊNG CHO GIÁO VIÊN
+   Hai dòng dưới đây là thứ duy nhất giáo viên cần chỉnh trước khi gửi link cho học sinh.
+   ========================================================= */
+var TEACHER_PIN = "2026";                 // Mã PIN để mở Teacher Mode. Đổi thành số riêng của thầy/cô.
+var SHEET_WEBHOOK_URL = "";               // Dán URL Google Apps Script (.../exec) vào đây để tự động
+                                           // gửi kết quả học sinh về Google Sheet. Để trống "" nếu chưa dùng.
+
 /* =========================================================
    1. LƯU TRỮ (localStorage + dự phòng bộ nhớ tạm)
    ========================================================= */
@@ -1814,12 +1843,15 @@ $("btnPrint").addEventListener("click", function(){
 /* =========================================================
    17. XUẤT KẾT QUẢ HỌC SINH
    ========================================================= */
-function exportStudentResult(){
-  var data = {
+function buildResultPayload(){
+  return {
     hoTen: state.name, nhom: state.group, xp: state.xp, badge: badgeOf(state.xp),
     hoanThanh: doneCount() + "/7", thoiGian: new Date().toISOString(),
     hoatDong: state.done, cauTraLoi: state.answers
   };
+}
+function exportStudentResult(){
+  var data = buildResultPayload();
   var blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
   var a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -1830,6 +1862,24 @@ function exportStudentResult(){
 }
 $("btnExport").addEventListener("click", exportStudentResult);
 $("btnExport2").addEventListener("click", exportStudentResult);
+
+/* Gửi kết quả về Google Sheet của giáo viên (nếu đã cấu hình SHEET_WEBHOOK_URL).
+   Dùng mode:"no-cors" vì Google Apps Script Web App không trả về header CORS cho trang tĩnh —
+   trình duyệt sẽ không đọc được phản hồi, nhưng dữ liệu vẫn tới nơi và được ghi vào Sheet.
+   Vì vậy hàm này không thể báo "thành công/thất bại" chắc chắn, chỉ có thể gửi và hi vọng tới. */
+function sendToSheet(reason){
+  if(!SHEET_WEBHOOK_URL) return;
+  var data = buildResultPayload();
+  data.lyDoGui = reason || "khong_ro";
+  try{
+    fetch(SHEET_WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },   // tránh trình duyệt gửi preflight OPTIONS
+      body: JSON.stringify(data)
+    });
+  }catch(e){ /* Không chặn học sinh nếu mạng lỗi — bài học vẫn tiếp tục bình thường. */ }
+}
 
 /* =========================================================
    18. FINAL CHALLENGE – 8 CÂU
@@ -1931,6 +1981,7 @@ $("btnExit").addEventListener("click", function(){
   if(empty.length){ fb("fbExit","no","Còn " + empty.length + " ô trống. Viết ngắn gọn cũng được."); return; }
   addXP("exit", 50);
   markDone("exit");
+  sendToSheet("hoan_thanh_bai_hoc");    // gửi kết quả cuối cùng về Google Sheet của giáo viên, nếu đã cấu hình
   fb("fbExit","ok","Đã lưu phiếu của em. Chuyển sang màn hình tổng kết.");
   setTimeout(function(){ goto(SCREENS.length - 1); }, 700);
 });
@@ -1993,11 +2044,46 @@ var ANSWER_KEY = [
 ].join("<br><br>");
 $("answerKey").innerHTML = ANSWER_KEY;
 
-$("btnTeacher").addEventListener("click", function(){
+/* Khoá PIN cho Teacher Mode. Mở khoá được ghi nhớ trong sessionStorage, tức là còn hiệu lực
+   cho tới khi đóng hẳn tab trình duyệt — không cần nhập lại PIN liên tục trong một buổi dạy,
+   nhưng học sinh mở máy khác hoặc mở lại trình duyệt sẽ phải nhập từ đầu. */
+var teacherUnlocked = false;
+try{ teacherUnlocked = sessionStorage.getItem("datalab_teacher_ok") === "1"; }catch(e){}
+function openTeacherPanel(){
   var t = $("teacher");
-  t.classList.toggle("open");
-  t.setAttribute("aria-hidden", t.classList.contains("open") ? "false" : "true");
+  t.classList.add("open");
+  t.setAttribute("aria-hidden", "false");
+}
+function toggleTeacherPanel(){
+  var t = $("teacher");
+  var opening = !t.classList.contains("open");
+  t.classList.toggle("open", opening);
+  t.setAttribute("aria-hidden", opening ? "false" : "true");
+}
+$("btnTeacher").addEventListener("click", function(){
+  if(teacherUnlocked){ toggleTeacherPanel(); return; }
+  $("tlock").classList.add("show");
+  $("tlockInput").value = "";
+  $("tlockErr").classList.remove("show");
+  setTimeout(function(){ $("tlockInput").focus(); }, 60);
 });
+function tryTeacherUnlock(){
+  if($("tlockInput").value === TEACHER_PIN){
+    teacherUnlocked = true;
+    try{ sessionStorage.setItem("datalab_teacher_ok", "1"); }catch(e){}
+    $("tlock").classList.remove("show");
+    openTeacherPanel();
+  }else{
+    $("tlockErr").classList.add("show");
+    $("tlockInput").value = "";
+    $("tlockInput").focus();
+  }
+}
+$("tlockOk").addEventListener("click", tryTeacherUnlock);
+$("tlockInput").addEventListener("keydown", function(e){ if(e.key === "Enter") tryTeacherUnlock(); });
+$("tlockCancel").addEventListener("click", function(){ $("tlock").classList.remove("show"); });
+$("tlock").addEventListener("click", function(e){ if(e.target === $("tlock")) $("tlock").classList.remove("show"); });
+
 $("tFull").addEventListener("click", function(){
   if(!document.fullscreenElement){
     if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
@@ -2020,6 +2106,15 @@ $("tReset").addEventListener("click", function(){
   if(confirm("Xoá toàn bộ tiến độ, câu trả lời và điểm trên máy này?")) resetProgress();
 });
 $("tExport").addEventListener("click", exportStudentResult);
+$("tSheetTest").addEventListener("click", function(){
+  if(!SHEET_WEBHOOK_URL){
+    $("sheetStatus").textContent = "Chưa cấu hình SHEET_WEBHOOK_URL trong file — xem hướng dẫn ở đầu code.";
+    return;
+  }
+  sendToSheet("giao_vien_gui_thu");
+  $("sheetStatus").textContent = "Đã gửi một dòng thử. Mở Google Sheet để kiểm tra (không thể xác nhận thành công từ trang này).";
+  toast("Đã gửi thử lên Google Sheet");
+});
 function resetProgress(){
   Store.clear();
   state = blankState();
