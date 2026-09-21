@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bài 4. Bên trong máy tính — Tin học 11 · Google Apps Script</title>
+<style>
+:root{
+  --navy:#0B1220; --navy2:#111C33; --blue:#2563EB; --blue-d:#1D4ED8; --cyan:#06B6D4;
+  --orange:#F97316; --purple:#7C3AED; --bg:#F5F8FC; --card:#FFFFFF; --text:#0F172A;
+  --muted:#5B6472; --green:#16A34A; --red:#DC2626; --border:#E2E8F0;
+  --font-head:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"Cascadia Code","Consolas","SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+img,svg{max-width:100%;}
+h1,h2,h3{font-family:var(--font-head); margin:0 0 8px;}
+h2.section-title{font-size:clamp(22px,3.4vw,30px); font-weight:800; color:var(--navy);}
+p{line-height:1.55; color:var(--muted); margin:0 0 10px;}
+.wrap{max-width:1080px; margin:0 auto; padding:0 20px;}
+.btn{border:none; cursor:pointer; font-family:var(--font-head); font-weight:700; border-radius:14px; padding:14px 28px; font-size:16px; transition:transform .15s,box-shadow .15s,opacity .15s;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--cyan)); color:#fff; box-shadow:0 10px 24px -8px rgba(37,99,235,.55);}
+.btn-secondary{background:#fff; color:var(--blue); border:2px solid var(--blue);}
+.btn-orange{background:linear-gradient(135deg,var(--orange),#FB923C); color:#fff; box-shadow:0 10px 22px -8px rgba(249,115,22,.55);}
+.btn-ghost{background:#EEF2FF; color:var(--navy2); border:1px solid var(--border);}
+.btn-sm{padding:9px 16px; font-size:14px; border-radius:10px;}
+.btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none;}
+.btn.ready{animation:readyPulse 1s ease 2;}
+@keyframes readyPulse{0%,100%{box-shadow:0 10px 24px -8px rgba(37,99,235,.55);}50%{box-shadow:0 0 0 7px rgba(6,182,212,.18),0 10px 24px -8px rgba(37,99,235,.55);}}
+
+/* ===== LANDING ===== */
+#landing{position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 20% 20%,#16244a 0%,var(--navy) 55%,#060a14 100%); color:#fff; overflow:auto; padding:40px 20px;}
+.hero-bits{position:absolute; inset:0; overflow:hidden; opacity:.3; pointer-events:none;}
+.bit{position:absolute; font-family:var(--font-mono); font-weight:700; color:var(--cyan); font-size:18px; animation:float 9s linear infinite;}
+@keyframes float{from{transform:translateY(110vh);}to{transform:translateY(-10vh);}}
+.landing-inner{position:relative; z-index:2; text-align:center; max-width:520px; width:100%;}
+.hero-eyebrow{display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); padding:7px 16px; border-radius:999px; font-size:13px; color:#BFD3FF; margin-bottom:20px;}
+#landing h1{font-size:clamp(30px,6vw,46px); font-weight:800; line-height:1.08; margin-bottom:4px;}
+#landing h1 span{display:block; background:linear-gradient(90deg,var(--cyan),var(--blue) 60%,var(--purple)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.subtitle{font-size:17px; color:#9FB4DA; margin:16px 0 4px;}
+.teacher{font-size:15px; color:#E7ECFB; margin-bottom:26px;}
+.teacher b{color:#fff;}
+.hero-illustration{margin:0 auto 22px; width:min(420px,90%);}
+.login-card{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:22px; text-align:left; margin-bottom:22px;}
+.login-card label{display:block; font-size:13px; font-weight:700; color:#BFD3FF; margin:12px 0 6px;}
+.login-card label:first-child{margin-top:0;}
+.login-card input{width:100%; padding:12px 14px; border-radius:10px; border:1.5px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08); color:#fff; font-size:15px; font-family:var(--font-body);}
+.login-card input::placeholder{color:#7C8CB0;}
+.login-card input:focus{outline:none; border-color:var(--cyan);}
+.form-error{color:#FCA5A5; font-size:13px; margin-top:8px; min-height:18px;}
+.hero-cta .btn{font-size:17px; padding:16px 36px; width:100%;}
+.scroll-hint{margin-top:16px; font-size:12.5px; color:#7C8CB0;}
+
+/* ===== TOP BAR ===== */
+.topbar{position:sticky; top:0; z-index:50; background:rgba(247,250,255,.94); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); padding-top:env(safe-area-inset-top,0px); display:none;}
+.topbar.show{display:block;}
+.progress-strip{padding:10px 20px 6px; max-width:1080px; margin:0 auto;}
+.progress-strip .row{display:flex; align-items:center; gap:12px; font-size:13px; color:var(--muted); font-weight:600; flex-wrap:wrap;}
+.who{font-weight:700; color:var(--navy2);}
+.blocks{font-family:var(--font-mono); letter-spacing:3px; font-size:16px; color:var(--blue); font-weight:700;}
+.timer-pill{font-family:var(--font-mono); font-weight:800; color:var(--navy2); background:#EEF2FF; border:1px solid #C7D2FE; border-radius:999px; padding:5px 10px; white-space:nowrap;}
+.timer-pill.warn{color:#9A3412; background:#FFF7ED; border-color:#FDBA74;}
+.timer-pill.danger{color:#991B1B; background:#FEF2F2; border-color:#FCA5A5;}
+.bar-outer{flex:1; min-width:100px; height:8px; background:#E7ECF5; border-radius:99px; overflow:hidden;}
+.bar-inner{height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),var(--blue)); border-radius:99px; transition:width .5s ease;}
+.taskmap{display:flex; gap:8px; overflow-x:auto; padding:6px 20px 12px; max-width:1080px; margin:0 auto;}
+.task-pill{flex:1; min-width:130px; display:flex; align-items:center; gap:8px; background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:9px 12px; cursor:default; font-size:12.5px; font-weight:700; color:#94A3B8; transition:.2s; white-space:nowrap; justify-content:center;}
+.task-pill .num{width:22px; height:22px; border-radius:50%; background:#F1F5F9; color:#94A3B8; display:flex; align-items:center; justify-content:center; font-size:12px; flex:0 0 auto;}
+.task-pill.active{border-color:var(--blue); color:var(--navy2); background:#EFF6FF;}
+.task-pill.active .num{background:var(--blue); color:#fff;}
+.task-pill.done{border-color:var(--green); background:#F0FDF4; color:var(--navy2); cursor:pointer;}
+.task-pill.done .num{background:var(--green); color:#fff;}
+
+/* ===== STEP SCREENS ===== */
+.step-screen{display:none;}
+.step-screen.active{display:block; animation:fadeUp .35s ease;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+.step-header{max-width:1080px; margin:0 auto; padding:26px 20px 0;}
+.step-crumb{font-size:12.5px; font-weight:800; color:var(--blue); letter-spacing:.3px; margin-bottom:6px;}
+main{padding-bottom:110px;}
+section{padding:30px 0 54px;}
+.section-inner{max-width:1080px; margin:0 auto; padding:0 20px;}
+.section-tag{display:inline-block; font-size:13px; font-weight:800; color:var(--blue); background:#EAF1FF; padding:5px 14px; border-radius:999px; margin-bottom:12px;}
+.card{background:var(--card); border:1px solid var(--border); border-radius:20px; padding:24px; box-shadow:0 4px 18px -10px rgba(15,23,42,.12);}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+@media(max-width:820px){.grid2{grid-template-columns:1fr;}}
+
+/* ===== BOTTOM NAV ===== */
+.bottomnav{position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--border);
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px)); display:none; align-items:center; justify-content:space-between; gap:14px;
+  box-shadow:0 -6px 20px -12px rgba(15,23,42,.25);}
+.bottomnav.show{display:flex;}
+.bn-info{font-size:12.5px; color:var(--muted); font-weight:700; display:flex; flex-direction:column; gap:2px;}
+.bn-info .stepname{color:var(--navy2); font-size:14.5px;}
+.bn-actions{display:flex; gap:10px; align-items:center;}
+.lockhint{font-size:12px; color:#94A3B8; font-weight:600; margin-right:6px; display:none;}
+.lockhint.show{display:inline;}
+
+/* ===== DRAG & DROP shared ===== */
+.tray{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:22px;}
+.tag{touch-action:none; user-select:none; background:#fff; border:2px solid var(--blue); color:var(--blue-d); font-weight:800; padding:12px 20px; border-radius:12px; cursor:grab; font-size:15px; box-shadow:0 3px 10px -4px rgba(37,99,235,.35);}
+.tag.used{opacity:.3; pointer-events:none;}
+.dragging-clone{opacity:.9; box-shadow:0 12px 26px -8px rgba(0,0,0,.4)!important;}
+.dropzone-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; margin-top:10px;}
+.drop-zone{border:2.5px dashed #C6D3E8; border-radius:16px; min-height:155px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:14px; background:#fff; transition:.2s; position:relative;}
+.drop-zone.correct{border-color:var(--green); background:#F0FDF4;}
+.drop-zone.wrong{animation:shake .4s;}
+@keyframes shake{10%,90%{transform:translateX(-4px);}20%,80%{transform:translateX(6px);}30%,50%,70%{transform:translateX(-8px);}40%,60%{transform:translateX(8px);}}
+.drop-zone .fill-label{font-weight:800; color:var(--green); font-size:14px;}
+.drop-zone .check{position:absolute; top:8px; right:10px; color:var(--green); font-size:18px;}
+.zone-icon{width:92px; height:78px;}
+.feedback-msg{margin-top:16px; text-align:center; font-weight:700; color:var(--green); min-height:24px;}
+
+.bins-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:20px;}
+@media(max-width:900px){.bins-row{grid-template-columns:repeat(2,1fr);}}
+.bin{border:2px dashed #C6D3E8; border-radius:16px; padding:14px; min-height:190px; background:#fff;}
+.bin h4{margin:0 0 8px; font-size:15px; color:var(--navy2); text-align:center;}
+.bin .dropped-item{background:#F0FDF4; border:1px solid var(--green); border-radius:10px; padding:6px 8px; font-size:12.5px; margin-bottom:6px; color:#166534; font-weight:700;}
+.bin .explain{font-size:11.5px; color:var(--muted); font-weight:500; margin:-2px 0 6px;}
+
+.perf-cards{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:10px;}
+@media(max-width:700px){.perf-cards{grid-template-columns:1fr;}}
+.perf-card{border-radius:18px; padding:22px; color:#fff;}
+.perf-card.a{background:linear-gradient(135deg,#334155,#0F172A);}
+.perf-card.b{background:linear-gradient(135deg,var(--purple),var(--blue));}
+.perf-card .spec{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.15); font-size:14.5px;}
+.perf-card .spec b{font-family:var(--font-mono);}
+.check-list{margin-top:18px; display:flex; flex-direction:column; gap:10px;}
+.check-item{display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid var(--border); border-radius:12px; padding:12px 16px; cursor:pointer; font-weight:600;}
+.check-item.right{border-color:var(--green); background:#F0FDF4;}
+.check-item.wrong{border-color:var(--red); background:#FEF2F2;}
+.check-item input{width:18px; height:18px;}
+.callout{margin-top:18px; background:#EFF6FF; border-left:4px solid var(--blue); border-radius:10px; padding:14px 16px; font-size:14.5px; color:var(--navy2); font-weight:600;}
+
+.gate-grid{display:grid; grid-template-columns:1fr 1fr; gap:22px;}
+@media(max-width:900px){.gate-grid{grid-template-columns:1fr;}}
+.gate-card{border-radius:20px; padding:22px; background:#fff; border:1px solid var(--border);}
+.gate-card h3{font-size:19px; display:flex; align-items:center; gap:10px; color:var(--navy);}
+.gate-badge{width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:14px;}
+.switch-row{display:flex; gap:26px; justify-content:center; margin:14px 0 4px;}
+.switch-block{text-align:center;}
+.switch-label{font-weight:800; color:var(--navy2); margin-bottom:6px; font-size:14px;}
+.switch-btn{width:64px; height:64px; border-radius:50%; border:3px solid var(--border); background:#F3F6FB; font-family:var(--font-mono); font-size:26px; font-weight:800; cursor:pointer; color:#94A3B8; transition:.2s;}
+.switch-btn.on{background:linear-gradient(135deg,var(--cyan),var(--blue)); color:#fff; border-color:var(--blue); box-shadow:0 0 0 6px rgba(37,99,235,.15);}
+.gate-svg-wrap{display:flex; justify-content:center; margin:14px 0;}
+.wire{stroke:#CBD5E1; stroke-width:5; fill:none; transition:stroke .25s;}
+.wire.active{stroke:var(--orange); stroke-dasharray:9 7; animation:dash .6s linear infinite;}
+@keyframes dash{to{stroke-dashoffset:-32;}}
+.gate-shape{fill:#E2E8F0; stroke:#94A3B8; stroke-width:2.5; transition:.25s;}
+.gate-shape.on{fill:#DBEAFE; stroke:var(--blue);}
+.gate-name-txt{font-family:var(--font-mono); font-weight:800; fill:#475569; font-size:17px;}
+.lamp{transition:.2s;} .lamp-off{fill:#CBD5E1;} .lamp-on{fill:#FDE047; filter:drop-shadow(0 0 10px #FACC15);}
+.output-readout{text-align:center; margin-top:2px; color:var(--navy2);}
+.output-readout .val{font-family:var(--font-mono); font-size:30px; font-weight:800;}
+.output-readout .val.on{color:var(--orange);} .output-readout .val.off{color:#94A3B8;}
+.truth-table{width:100%; border-collapse:collapse; margin-top:14px; font-family:var(--font-mono); font-size:14px;}
+.truth-table th,.truth-table td{border:1px solid var(--border); padding:7px; text-align:center;}
+.truth-table th{background:#F3F6FB; color:var(--navy2);}
+.truth-table td.pending{color:#CBD5E1;} .truth-table td.tried{color:var(--navy); font-weight:700; background:#F8FAFF;}
+.gate-actions{display:flex; justify-content:center; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap;}
+.rule-box{margin-top:12px; background:#F0FDF4; border:1px solid var(--green); border-radius:10px; padding:10px 14px; font-size:14px; color:#166534; font-weight:700; text-align:center; display:none;}
+.rule-box.show{display:block;}
+.hint-text{font-size:12.5px; color:var(--muted); text-align:center; margin-top:6px;}
+.gate-progress{text-align:center; margin-top:18px; font-size:13px; color:#9FB0CE; font-weight:700;}
+
+.predict-card{max-width:600px; margin:0 auto; text-align:center;}
+.predict-xy{display:flex; justify-content:center; gap:34px; font-family:var(--font-mono); font-size:34px; font-weight:800; margin:18px 0; color:var(--navy);}
+.predict-rows{display:flex; flex-direction:column; gap:12px; margin:20px 0;}
+.predict-row{display:flex; align-items:center; justify-content:space-between; background:#F8FAFF; border:1px solid var(--border); border-radius:12px; padding:10px 18px;}
+.predict-row .gname{font-weight:800; color:var(--navy2); font-family:var(--font-mono);}
+.pick-btns{display:flex; gap:8px;}
+.pick-btn{width:44px; height:44px; border-radius:10px; border:2px solid var(--border); background:#fff; font-family:var(--font-mono); font-weight:800; font-size:17px; cursor:pointer; color:var(--navy2);}
+.pick-btn.sel{border-color:var(--blue); background:var(--blue); color:#fff;}
+.pick-btn.right{border-color:var(--green); background:var(--green); color:#fff;}
+.pick-btn.wrongpick{border-color:var(--red); background:var(--red); color:#fff;}
+.predict-feedback{min-height:28px; font-weight:700; margin-top:6px;}
+.predict-feedback.ok{color:var(--green);} .predict-feedback.bad{color:var(--red);}
+.streak-note{font-size:13px; color:var(--muted); margin-top:8px;}
+
+.basic-sums{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:10px;}
+@media(max-width:760px){.basic-sums{grid-template-columns:repeat(2,1fr);}}
+.sum-card{background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px 10px; text-align:center;}
+.sum-card .expr{font-family:var(--font-mono); font-size:22px; font-weight:800; color:var(--navy2);}
+.sum-card .res{font-family:var(--font-mono); font-size:26px; font-weight:800; color:var(--blue); margin-top:8px; min-height:34px;}
+.carry-demo{max-width:340px; margin:26px auto 6px; text-align:center;}
+.carry-visual{position:relative; height:150px; display:flex; align-items:center; justify-content:center;}
+.bitbox{width:60px; height:60px; border-radius:12px; background:#EEF2FF; border:2px solid var(--blue); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:28px; font-weight:800; color:var(--blue-d); margin:0 8px; position:relative;}
+.bitbox.carrybox{border-color:var(--orange); color:var(--orange); transform:translateY(-38px); opacity:0; transition:all .6s ease;}
+.bitbox.carrybox.show{opacity:1; transform:translateY(0);}
+.bitbox.resultbox{border-color:var(--green); color:var(--green);}
+.exercise-card{margin-top:22px;}
+.binexpr{font-family:var(--font-mono); font-size:26px; text-align:right; max-width:220px; margin:14px auto; line-height:1.5;}
+.binexpr .line{white-space:pre;}
+.binexpr input{font-family:var(--font-mono); font-size:26px; text-align:right; width:100%; border:none; border-top:3px solid var(--navy); padding-top:6px; background:transparent; color:var(--blue-d); font-weight:800; outline:none;}
+.exercise-foot{display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;}
+.result-msg{text-align:center; font-weight:700; margin-top:10px; min-height:22px;}
+.result-msg.ok{color:var(--green);} .result-msg.bad{color:var(--red);}
+.hint-box{display:none; background:#FFF7ED; border:1px solid var(--orange); border-radius:10px; padding:10px 14px; font-size:13.5px; color:#9A3412; margin-top:10px; text-align:center; font-weight:600;}
+.hint-box.show{display:block;}
+.extra-tag{display:inline-block; background:var(--purple); color:#fff; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:999px; margin-bottom:8px;}
+
+.adder-wrap{display:flex; flex-direction:column; align-items:center; gap:18px;}
+.adder-switches{display:flex; gap:40px;}
+.adder-result{text-align:center; font-family:var(--font-mono);}
+.adder-result .eq{font-size:26px; font-weight:800; color:var(--navy);}
+.adder-result .eq .z{color:var(--orange);} .adder-result .eq .t{color:var(--blue-d);}
+.zt-labels{display:flex; gap:26px; justify-content:center; margin-top:6px; font-size:13px; font-weight:700;}
+.zt-labels .zdot,.zt-labels .tdot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px;}
+.zt-labels .zdot{background:var(--orange);} .zt-labels .tdot{background:var(--blue-d);}
+.flow-note{display:flex; align-items:center; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap; font-size:13px; font-weight:700; color:var(--navy2);}
+.flow-note .step{background:#F3F6FB; border:1px solid var(--border); border-radius:999px; padding:6px 14px;}
+.flow-note .arrow{color:#94A3B8;}
+
+.quiz-q{border:1px solid var(--border); border-radius:16px; padding:18px 20px; margin-bottom:16px; background:#fff;}
+.quiz-q .qtitle{font-weight:800; color:var(--navy2); margin-bottom:12px; font-size:15.5px;}
+.quiz-q .qnum{display:inline-block; background:#EAF1FF; color:var(--blue); font-family:var(--font-mono); font-weight:800; border-radius:8px; padding:2px 9px; margin-right:8px; font-size:13px;}
+.opt-list{display:flex; flex-direction:column; gap:8px;}
+.opt-item{border:1.5px solid var(--border); border-radius:10px; padding:10px 14px; cursor:pointer; font-weight:600; font-size:14.5px;}
+.opt-item.sel{border-color:var(--blue); background:#EFF6FF;}
+.opt-item.correctans{border-color:var(--green); background:#F0FDF4;}
+.opt-item.wrongans{border-color:var(--red); background:#FEF2F2;}
+.tf-row{display:flex; gap:12px;}
+.tf-row .opt-item{flex:1; text-align:center;}
+.fill-row input{width:120px; font-family:var(--font-mono); font-size:18px; text-align:center; padding:8px; border-radius:8px; border:1.5px solid var(--border);}
+.quiz-explain{font-size:13px; color:var(--muted); margin-top:10px; display:none;}
+.quiz-explain.show{display:block;}
+.mini-bins{display:flex; gap:14px; margin-top:10px;}
+.mini-bin{flex:1; border:2px dashed #C6D3E8; border-radius:12px; min-height:80px; padding:10px; text-align:center; font-size:12px; font-weight:700; color:var(--navy2);}
+.mini-tray{display:flex; gap:10px; margin-top:10px; justify-content:center;}
+.score-box{text-align:center; padding:34px 20px;}
+.takeaway-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:20px 0; text-align:left;}
+.takeaway{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:12px; padding:11px 12px; color:#E7ECFB; font-size:13px; line-height:1.4;}
+@media(max-width:560px){.takeaway-grid{grid-template-columns:1fr}.bottomnav{padding-left:10px;padding-right:10px}.bn-info{display:none}.lockhint{display:none!important}.btn{padding-left:16px;padding-right:16px}.bottomnav .btn{font-size:13px}}
+.score-box .num{font-family:var(--font-mono); font-size:56px; font-weight:800; color:var(--blue);}
+.score-box .remark{font-size:19px; font-weight:800; margin-top:8px;}
+.quiz-actions{display:flex; gap:12px; justify-content:center; margin-top:20px; flex-wrap:wrap;}
+
+
+/* ===== EXIT TICKET ===== */
+.exit-card{max-width:860px;margin:0 auto;}
+.exit-intro{display:flex;align-items:flex-start;gap:12px;background:linear-gradient(135deg,#ECFDF5,#EFF6FF);border:1px solid #A7F3D0;border-radius:16px;padding:14px 16px;margin:16px 0 20px;color:var(--navy2);font-size:14px;line-height:1.5}
+.exit-intro .icon{font-size:28px;line-height:1}
+.exit-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+@media(max-width:760px){.exit-grid{grid-template-columns:1fr}}
+.exit-q{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px}
+.exit-q h3{font-size:15.5px;color:var(--navy2);margin:0 0 10px}
+.exit-q select,.exit-q textarea{width:100%;border:1.5px solid var(--border);border-radius:10px;background:#fff;color:var(--text);font-family:var(--font-body);font-size:14px;padding:11px 12px;outline:none}
+.exit-q select:focus,.exit-q textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+.exit-q textarea{min-height:92px;resize:vertical;line-height:1.45}
+.confidence-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.conf-btn{width:48px;height:48px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--navy2);font-family:var(--font-mono);font-weight:900;font-size:17px;cursor:pointer;transition:.18s}
+.conf-btn:hover{transform:translateY(-1px);border-color:#93C5FD}
+.conf-btn.sel{border-color:var(--blue);background:var(--blue);color:#fff;box-shadow:0 5px 12px rgba(37,99,235,.18)}
+.conf-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:11.5px;margin-top:5px;max-width:272px}
+.exit-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.exit-feedback{margin-top:14px;min-height:22px;text-align:center;font-weight:800}
+.exit-feedback.bad{color:var(--red)}.exit-feedback.ok{color:var(--green)}
+.exit-summary{margin-top:18px;background:#F8FAFC;border:1px solid var(--border);border-radius:16px;padding:16px;text-align:left}
+.exit-summary h3{margin:0 0 10px;color:var(--navy2);font-size:16px}
+.exit-summary .row{padding:7px 0;border-bottom:1px dashed #CBD5E1;font-size:13.5px;line-height:1.45}.exit-summary .row:last-child{border-bottom:none}
+.exit-badge{display:inline-flex;align-items:center;gap:6px;background:#ECFDF5;border:1px solid #86EFAC;color:#166534;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}
+
+#finalScreen{display:none; min-height:100svh; align-items:center; justify-content:center; text-align:center; padding:40px 20px;
+  background:radial-gradient(circle at 30% 20%,#16244a 0%,var(--navy) 55%,#060a14 100%); color:#fff;}
+#finalScreen.show{display:flex;}
+#finalScreen .box{max-width:520px;}
+#finalScreen .medal{font-size:64px;}
+#finalScreen h2{color:#fff; font-size:28px;}
+#finalScreen .fname{color:var(--cyan); font-weight:800;}
+#finalScreen p{color:#B9C6E4;}
+
+.pulse{animation:pulseAnim .5s ease;}
+@keyframes pulseAnim{0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
+footer{text-align:center; padding:30px 20px 130px; color:var(--muted); font-size:13px;}
+
+/* ===== GROWTH MINDSET + XP ===== */
+.xp-pill{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FEF3C7,#FFFBEB);border:1px solid #F59E0B;color:#92400E;font-weight:900;padding:6px 10px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 8px rgba(245,158,11,.15)}
+.growth-card{margin:14px 0 18px;background:rgba(16,185,129,.10);border:1px solid rgba(52,211,153,.35);border-radius:14px;padding:12px 14px;color:#D1FAE5;font-size:13px;line-height:1.5;text-align:left}
+.growth-card b{color:#fff}.growth-card .xp-rule{color:#FDE68A;font-weight:800}
+.xp-toast{position:fixed;right:18px;top:92px;z-index:300;max-width:min(360px,calc(100vw - 36px));background:#fff;border:1px solid var(--border);border-left:5px solid var(--green);border-radius:14px;padding:12px 14px;box-shadow:0 14px 32px rgba(15,23,42,.18);transform:translateX(calc(100% + 40px));opacity:0;transition:.3s ease;pointer-events:none}
+.xp-toast.show{transform:translateX(0);opacity:1}.xp-toast.miss{border-left-color:var(--orange)}
+.xp-toast .xp-main{font-weight:900;color:var(--navy2);font-size:14px}.xp-toast .xp-sub{margin-top:3px;font-size:12.5px;color:var(--muted);line-height:1.4}
+.xp-inline{display:inline-flex;align-items:center;gap:5px;background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:800;margin-left:6px}
+.growth-final{margin:14px 0;background:rgba(16,185,129,.12);border:1px solid rgba(52,211,153,.35);border-radius:14px;padding:12px;color:#D1FAE5;font-size:14px;line-height:1.5}
+@media(max-width:700px){.xp-toast{top:auto;bottom:92px;right:10px;left:10px;max-width:none}.xp-pill{font-size:12px}}
+
+
+
+/* ===== TEACHER MODE ===== */
+.teacher-entry{margin-top:10px;display:flex;justify-content:center;}
+.teacher-entry .btn{width:100%;background:rgba(255,255,255,.08);color:#E0F2FE;border:1px solid rgba(125,211,252,.45);box-shadow:none;}
+.teacher-entry .btn:hover{background:rgba(14,165,233,.15);}
+.teacher-mode-btn{border:1px solid #A78BFA;background:#F5F3FF;color:#6D28D9;border-radius:999px;padding:7px 12px;font-weight:900;cursor:pointer;white-space:nowrap;font-size:12.5px;}
+.teacher-mode-btn.on{background:#6D28D9;color:#fff;border-color:#6D28D9;box-shadow:0 0 0 4px rgba(109,40,217,.12);}
+.teacher-banner{display:none;max-width:1080px;margin:0 auto 6px;padding:8px 20px;color:#5B21B6;font-size:12.5px;font-weight:800;align-items:center;gap:8px;}
+.teacher-banner.show{display:flex;}
+.teacher-banner .dot{width:9px;height:9px;border-radius:50%;background:#8B5CF6;box-shadow:0 0 0 4px rgba(139,92,246,.12);}
+.teacher-panel{display:none;max-width:1080px;margin:0 auto;padding:4px 20px 12px;}
+.teacher-panel.show{display:block;}
+.teacher-panel-inner{background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:16px;padding:12px;}
+.teacher-panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap;}
+.teacher-panel-title{font-size:13px;font-weight:900;color:#5B21B6;}
+.teacher-step-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;}
+.teacher-step-btn{border:1.5px solid #DDD6FE;background:#fff;color:#4C1D95;border-radius:11px;padding:9px 10px;font-size:12px;font-weight:800;cursor:pointer;text-align:left;transition:.15s;}
+.teacher-step-btn:hover,.teacher-step-btn.active{border-color:#7C3AED;background:#EDE9FE;transform:translateY(-1px);}
+.task-pill.teacher-open{cursor:pointer!important;color:#4C1D95;border-color:#C4B5FD;background:#FAF5FF;}
+.task-pill.teacher-open .num{background:#8B5CF6;color:#fff;}
+.teacher-mode .lockhint{display:none!important;}
+.teacher-mode #continueBtn:disabled{opacity:1;cursor:pointer;}
+.teacher-corner{position:fixed;right:14px;bottom:92px;z-index:65;display:none;background:#6D28D9;color:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900;box-shadow:0 8px 22px rgba(76,29,149,.25);pointer-events:none;}
+.teacher-corner.show{display:block;}
+@media(max-width:700px){.teacher-step-grid{grid-template-columns:1fr 1fr}.teacher-corner{bottom:112px}.teacher-mode-btn{font-size:11.5px;padding:6px 9px}}
+
+
+/* ===== TEACHER PASSWORD GATE ===== */
+.teacher-lock-modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,7,18,.72);backdrop-filter:blur(7px)}
+.teacher-lock-modal.show{display:flex}
+.teacher-lock-card{width:min(430px,94vw);background:#fff;border:1px solid #DDD6FE;border-radius:22px;padding:24px;box-shadow:0 24px 70px rgba(15,23,42,.35)}
+.teacher-lock-icon{width:58px;height:58px;border-radius:18px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:#F5F3FF;color:#6D28D9;font-size:30px}
+.teacher-lock-card h3{text-align:center;color:#4C1D95;font-size:21px;margin-bottom:6px}
+.teacher-lock-card p{text-align:center;font-size:13.5px;margin-bottom:16px}
+.teacher-pass-row{display:flex;gap:8px}
+.teacher-pass-row input{flex:1;min-width:0;padding:12px 14px;border:1.5px solid #C4B5FD;border-radius:12px;font:600 16px var(--font-body);outline:none}
+.teacher-pass-row input:focus{border-color:#7C3AED;box-shadow:0 0 0 4px rgba(124,58,237,.12)}
+.teacher-pass-toggle{border:1.5px solid #DDD6FE;background:#FAF5FF;color:#5B21B6;border-radius:12px;padding:0 12px;font-weight:800;cursor:pointer}
+.teacher-lock-error{min-height:20px;margin-top:9px;text-align:center;color:#DC2626;font-size:13px;font-weight:700}
+.teacher-lock-actions{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.teacher-lock-note{margin-top:12px!important;font-size:11.5px!important;color:#7C8CB0!important}
+.teacher-lockout{color:#9A3412!important}
+/* ===== GOOGLE APPS SCRIPT SYNC ===== */
+.gas-status{margin-top:10px;min-height:20px;text-align:center;font-size:12.5px;font-weight:800;color:var(--muted)}
+.gas-status.saving{color:#1D4ED8}.gas-status.ok{color:#15803D}.gas-status.bad{color:#B91C1C}
+.teacher-data-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed #C4B5FD}
+.teacher-data-table{margin-top:10px;max-height:300px;overflow:auto;background:#fff;border:1px solid #DDD6FE;border-radius:12px;display:none}
+.teacher-data-table.show{display:block}
+.teacher-data-table table{width:100%;border-collapse:collapse;font-size:11.5px}
+.teacher-data-table th,.teacher-data-table td{padding:7px 8px;border-bottom:1px solid #EEF2FF;text-align:left;vertical-align:top;white-space:nowrap}
+.teacher-data-table th{position:sticky;top:0;background:#F5F3FF;color:#4C1D95;z-index:1}
+.teacher-data-empty{padding:14px;color:var(--muted);font-size:12.5px}
+</style>
+</head>
+<body>
+
+<!-- ============ LANDING: NHẬP TÊN + LỚP ============ -->
+<div id="landing">
+  <div class="hero-bits" id="heroBits"></div>
+  <div class="landing-inner">
+    <div class="hero-eyebrow">🖥️ TIN HỌC 11 · CHỦ ĐỀ MÁY TÍNH VÀ XÃ HỘI TRI THỨC</div>
+    <h1>BÀI 4<span>BÊN TRONG MÁY TÍNH</span></h1>
+    <div class="subtitle">Phòng thực hành tương tác trên lớp</div>
+    <div class="teacher">Giáo viên: <b>HUỲNH VĂN DIỄN</b></div>
+
+    <svg class="hero-illustration" viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg">
+      <rect x="30" y="30" width="500" height="160" rx="16" fill="#132038" stroke="#274270" stroke-width="2"/>
+      <rect x="55" y="55" width="200" height="110" rx="10" fill="#0F1B30" stroke="#3B5A94"/>
+      <rect x="90" y="80" width="60" height="60" rx="6" fill="url(#cpuGrad)"/>
+      <text x="120" y="115" text-anchor="middle" fill="#0B1220" font-family="Consolas,monospace" font-weight="800" font-size="14">CPU</text>
+      <rect x="170" y="75" width="18" height="70" rx="3" fill="#22D3EE"/>
+      <rect x="195" y="75" width="18" height="70" rx="3" fill="#22D3EE"/>
+      <rect x="220" y="75" width="18" height="70" rx="3" fill="#22D3EE"/>
+      <text x="155" y="160" text-anchor="middle" fill="#7C93C4" font-family="Consolas,monospace" font-size="11">MAINBOARD · RAM</text>
+      <g font-family="Consolas,monospace" font-size="20" fill="#3B82F6" opacity="0.8">
+        <text x="300" y="70">01001</text>
+        <text x="330" y="100" fill="#22D3EE">10110</text>
+        <text x="300" y="130">00101</text>
+        <text x="330" y="160" fill="#A855F7">11010</text>
+      </g>
+      <defs><linearGradient id="cpuGrad" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#7C3AED"/><stop offset="1" stop-color="#2563EB"/></linearGradient></defs>
+    </svg>
+
+    <div class="login-card">
+      <label for="stuName">Họ và tên</label>
+      <input type="text" id="stuName" placeholder="Ví dụ: Nguyễn Văn A" maxlength="40">
+      <label for="stuClass">Lớp</label>
+      <input type="text" id="stuClass" placeholder="Ví dụ: 11A1" maxlength="20">
+      <div class="form-error" id="formError"></div>
+    </div>
+
+    <div class="hero-cta">
+      <button class="btn btn-primary" id="startBtn">BẮT ĐẦU THỰC HÀNH →</button>
+    </div>
+    <div class="teacher-entry">
+      <button class="btn" id="teacherStartBtn">👨‍🏫 VÀO TEACHER MODE — MỞ TỰ DO MỌI NHIỆM VỤ</button>
+    </div>
+    <div class="growth-card">🌱 <b>Tư duy phát triển:</b> Mỗi lần thử là một dữ liệu để học tốt hơn. <span class="xp-rule">Đúng lần 1 = 100% XP · lần 2 = 70% · lần 3 = 50% · từ lần 4 = 30%.</span> Làm sai không mất XP đã có — hãy quan sát, điều chỉnh và thử lại.</div>
+    <div class="scroll-hint">5 nhiệm vụ · nhiệm vụ cuối là Exit Ticket 3 phút</div>
+  </div>
+</div>
+
+
+<!-- ============ TEACHER MODE PASSWORD ============ -->
+<div class="teacher-lock-modal" id="teacherLockModal" aria-hidden="true">
+  <div class="teacher-lock-card" role="dialog" aria-modal="true" aria-labelledby="teacherLockTitle">
+    <div class="teacher-lock-icon">🔐</div>
+    <h3 id="teacherLockTitle">Teacher Mode</h3>
+    <p>Nhập mật khẩu giáo viên để mở quyền điều hướng tự do.</p>
+    <div class="teacher-pass-row">
+      <input type="password" id="teacherPassInput" autocomplete="off" placeholder="Mật khẩu giáo viên">
+      <button class="teacher-pass-toggle" id="teacherPassToggle" type="button" aria-label="Hiện hoặc ẩn mật khẩu">👁</button>
+    </div>
+    <div class="teacher-lock-error" id="teacherLockError"></div>
+    <div class="teacher-lock-actions">
+      <button class="btn btn-ghost btn-sm" id="teacherLockCancel" type="button">HỦY</button>
+      <button class="btn btn-primary btn-sm" id="teacherLockConfirm" type="button">MỞ TEACHER MODE</button>
+    </div>
+    <p class="teacher-lock-note">Teacher Mode chỉ dùng cho giáo viên. Hệ thống sẽ tạm khóa sau nhiều lần nhập sai.</p>
+  </div>
+</div>
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar" id="topbar">
+  <div class="progress-strip">
+    <div class="row">
+      <span class="who" id="whoText"></span>
+      <span class="blocks" id="blocksText">□□□□□</span>
+      <div class="bar-outer"><div class="bar-inner" id="barInner"></div></div>
+      <span id="pctText">0%</span>
+      <span class="timer-pill" id="timerText" title="Thời gian gợi ý cho tiết học">⏱ 45:00</span>
+      <span class="xp-pill" id="xpPill" title="XP ghi nhận mức độ chính xác và sự kiên trì">⚡ <span id="xpText">0 XP</span></span>
+      <button class="teacher-mode-btn" id="teacherModeBtn" type="button" title="Giáo viên có thể mở bất kỳ nhiệm vụ nào">👨‍🏫 Teacher Mode</button>
+    </div>
+  </div>
+  <div class="teacher-banner" id="teacherBanner"><span class="dot"></span> TEACHER MODE: điều hướng tự do · không cộng/trừ XP · không thay đổi tiến độ hoàn thành khi giáo viên thao tác.</div>
+  <div class="taskmap" id="taskmap">
+    <div class="task-pill" data-task="0"><span class="num">1</span> Khám phá phần cứng</div>
+    <div class="task-pill" data-task="1"><span class="num">2</span> Phòng TN Logic</div>
+    <div class="task-pill" data-task="2"><span class="num">3</span> Số học nhị phân</div>
+    <div class="task-pill" data-task="3"><span class="num">4</span> Thử thách cuối bài</div>
+    <div class="task-pill" data-task="4"><span class="num">5</span> Exit Ticket</div>
+  </div>
+  <div class="teacher-panel" id="teacherPanel">
+    <div class="teacher-panel-inner">
+      <div class="teacher-panel-head">
+        <div class="teacher-panel-title">🧭 ĐIỀU HƯỚNG GIÁO VIÊN — mở chính xác hoạt động cần trình chiếu</div>
+        <button class="btn btn-ghost btn-sm" id="teacherExitBtn" type="button">TẮT TEACHER MODE</button>
+      </div>
+      <div class="teacher-step-grid" id="teacherStepGrid"></div>
+      <div class="teacher-data-tools">
+        <button class="btn btn-secondary btn-sm" id="teacherDataBtn" type="button">📊 XEM KẾT QUẢ GẦN ĐÂY</button>
+        <button class="btn btn-ghost btn-sm" id="teacherDataRefresh" type="button" style="display:none;">↻ LÀM MỚI</button>
+        <span id="teacherDataStatus" style="font-size:12px;color:#6D28D9;font-weight:800;"></span>
+      </div>
+      <div class="teacher-data-table" id="teacherDataTable"></div>
+    </div>
+  </div>
+</div>
+<div class="teacher-corner" id="teacherCorner">👨‍🏫 TEACHER MODE</div>
+
+<main id="mainFlow">
+
+<!-- ===== STEP 0 (Nhiệm vụ 1a): NHẬN DIỆN THIẾT BỊ ===== -->
+<div class="step-screen" data-step="0">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 1 / 5 · KHÁM PHÁ PHẦN CỨNG — Bước 1/3</div></div>
+  <section>
+    <div class="section-inner">
+      <span class="section-tag">🔍 THỬ THÁCH 1</span>
+      <h2 class="section-title">Bên trong máy tính có gì?</h2>
+      <p>Kéo tên thiết bị ở khay bên dưới vào đúng ô hình minh họa tương ứng.</p>
+      <div class="card">
+        <div class="dropzone-grid" id="a1-zones"></div>
+        <div class="tray" id="a1-tray"></div>
+        <div class="feedback-msg" id="a1-feedback"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 1 (1b): CPU-RAM-ROM ===== -->
+<div class="step-screen" data-step="1">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 1 / 5 · KHÁM PHÁ PHẦN CỨNG — Bước 2/3</div></div>
+  <section style="background:#EFF4FB;">
+    <div class="section-inner">
+      <span class="section-tag">🧩 THỬ THÁCH 2</span>
+      <h2 class="section-title">CPU · RAM · ROM · Bộ nhớ ngoài</h2>
+      <p>Kéo từng thẻ đặc điểm vào đúng nhóm bộ nhớ / thành phần.</p>
+      <div class="card">
+        <div class="bins-row" id="a2-bins"></div>
+        <div class="tray" id="a2-tray"></div>
+        <div class="feedback-msg" id="a2-feedback"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 2 (1c): HIỆU NĂNG ===== -->
+<div class="step-screen" data-step="2">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 1 / 5 · KHÁM PHÁ PHẦN CỨNG — Bước 3/3</div></div>
+  <section>
+    <div class="section-inner">
+      <span class="section-tag">⚡ THỬ THÁCH 3</span>
+      <h2 class="section-title">Thông số nào ảnh hưởng đến tốc độ xử lí?</h2>
+      <p>Quan sát hai cấu hình và chọn các thông số kĩ thuật có thể ảnh hưởng đến hiệu năng. Không kết luận chỉ dựa vào một thông số duy nhất.</p>
+      <div class="perf-cards">
+        <div class="perf-card a">
+          <h3>💻 MÁY A</h3>
+          <div class="spec"><span>CPU</span><b>2.5 GHz</b></div>
+          <div class="spec"><span>Số lõi</span><b>4 cores</b></div>
+          <div class="spec"><span>RAM</span><b>8 GB</b></div>
+          <div class="spec"><span>Ổ cứng</span><b>SSD</b></div>
+        </div>
+        <div class="perf-card b">
+          <h3>💻 MÁY B</h3>
+          <div class="spec"><span>CPU</span><b>3.4 GHz</b></div>
+          <div class="spec"><span>Số lõi</span><b>8 cores</b></div>
+          <div class="spec"><span>RAM</span><b>16 GB</b></div>
+          <div class="spec"><span>Ổ cứng</span><b>SSD</b></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:20px;">
+        <p style="font-weight:700; color:var(--navy2);">Những thông số nào có thể ảnh hưởng đến tốc độ xử lí?</p>
+        <div class="check-list" id="a3-list"></div>
+        <div style="display:flex; gap:10px; margin-top:16px; justify-content:center;">
+          <button class="btn btn-primary btn-sm" id="a3-check">KIỂM TRA</button>
+          <button class="btn btn-ghost btn-sm" id="a3-reset">THỬ LẠI</button>
+        </div>
+        <div class="callout" id="a3-callout" style="display:none;"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 3 (2a): LOGIC LAB ===== -->
+<div class="step-screen" data-step="3">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 2 / 5 · PHÒNG TN LOGIC — Bước 1/2</div></div>
+  <section style="background:#0B1220; color:#fff;">
+    <div class="section-inner">
+      <span class="section-tag" style="background:rgba(255,255,255,.1); color:#7DD3FC;">🧪 TRỌNG TÂM BÀI HỌC</span>
+      <h2 class="section-title" style="color:#fff;">Phòng thí nghiệm Logic</h2>
+      <p style="color:#9FB0CE;">Bật/tắt công tắc x, y để xem tín hiệu chạy qua cổng logic và đèn đầu ra thay đổi. Hãy thử đủ các trường hợp trước khi bấm "Xem quy luật".</p>
+      <div class="gate-grid" id="gateGrid"></div>
+      <div class="gate-progress" id="gateOverallProgress">Đã khám phá quy luật: 0/4 cổng</div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 4 (2b): PREDICT ===== -->
+<div class="step-screen" data-step="4">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 2 / 5 · PHÒNG TN LOGIC — Bước 2/2</div></div>
+  <section style="background:#0B1220; color:#fff;">
+    <div class="section-inner">
+      <div class="card predict-card" style="background:#111C33; border-color:#26375C;">
+        <h3 style="color:#fff;">🎯 Thử thách dự đoán logic</h3>
+        <p style="color:#9FB0CE;">Dự đoán kết quả AND, OR, XOR trước khi kiểm tra.</p>
+        <div class="predict-xy">x = <span id="pred-x">?</span> &nbsp; y = <span id="pred-y">?</span></div>
+        <div class="predict-rows" id="predict-rows"></div>
+        <button class="btn btn-primary btn-sm" id="predictCheck">KIỂM TRA</button>
+        <button class="btn btn-orange btn-sm" id="predictSim" style="display:none;">THỬ TRÊN MÔ PHỎNG</button>
+        <div class="predict-feedback" id="predictFeedback"></div>
+        <div class="streak-note" id="predictStreak" style="color:#7C8CB0;">Số lượt đúng: 0 / 3</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 5 (3a): CỘNG NHỊ PHÂN ===== -->
+<div class="step-screen" data-step="5">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 3 / 5 · SỐ HỌC NHỊ PHÂN — Bước 1/2</div></div>
+  <section>
+    <div class="section-inner">
+      <span class="section-tag">➕ THỬ THÁCH</span>
+      <h2 class="section-title">Phép cộng nhị phân</h2>
+      <p>Bấm từng phép cộng cơ bản để xem kết quả. Chú ý phép 1 + 1 có số nhớ!</p>
+      <div class="basic-sums" id="basicSums"></div>
+      <div class="carry-demo">
+        <p style="font-weight:700; color:var(--navy2); text-align:center;">1 + 1 = ? (có nhớ)</p>
+        <div class="carry-visual">
+          <div class="bitbox carrybox" id="carryBit">1</div>
+          <div class="bitbox resultbox" id="resultBit">0</div>
+        </div>
+        <div style="text-align:center;"><button class="btn btn-orange btn-sm" id="carryPlay">▶ XEM HOẠT ẢNH</button></div>
+      </div>
+      <div class="grid2 exercise-card">
+        <div class="card">
+          <div class="section-tag" style="background:#F0FDF4; color:var(--green);">BÀI 1</div>
+          <div class="binexpr"><div class="line">&nbsp;1010</div><div class="line">+&nbsp;101</div><input type="text" id="ex1-input" placeholder="?" maxlength="8"></div>
+          <div class="exercise-foot">
+            <button class="btn btn-primary btn-sm" data-check="1">KIỂM TRA</button>
+            <button class="btn btn-ghost btn-sm" data-hint="1">GỢI Ý</button>
+          </div>
+          <div class="hint-box" id="hint-1">Cộng từ phải sang trái và nhớ sang hàng kế tiếp.</div>
+          <div class="result-msg" id="res-1"></div>
+        </div>
+        <div class="card">
+          <div class="section-tag" style="background:#F0FDF4; color:var(--green);">BÀI 2</div>
+          <div class="binexpr"><div class="line">&nbsp;1001</div><div class="line">+1011</div><input type="text" id="ex2-input" placeholder="?" maxlength="8"></div>
+          <div class="exercise-foot">
+            <button class="btn btn-primary btn-sm" data-check="2">KIỂM TRA</button>
+            <button class="btn btn-ghost btn-sm" data-hint="2">GỢI Ý</button>
+          </div>
+          <div class="hint-box" id="hint-2">Cộng từ phải sang trái và nhớ sang hàng kế tiếp.</div>
+          <div class="result-msg" id="res-2"></div>
+        </div>
+      </div>
+      <div class="card exercise-card">
+        <div class="extra-tag">BÀI LUYỆN THÊM</div>
+        <div id="extraExercise"></div>
+        <div class="exercise-foot">
+          <button class="btn btn-primary btn-sm" id="extraCheck">KIỂM TRA</button>
+          <button class="btn btn-ghost btn-sm" id="extraNew">SINH BÀI MỚI</button>
+        </div>
+        <div class="result-msg" id="extraRes"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 6 (3b): MẠCH CỘNG 2 BIT ===== -->
+<div class="step-screen" data-step="6">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 3 / 5 · SỐ HỌC NHỊ PHÂN — Bước 2/2</div></div>
+  <section style="background:#EFF4FB;">
+    <div class="section-inner">
+      <span class="section-tag">⚙️ QUAN TRỌNG NHẤT</span>
+      <h2 class="section-title">Máy tính cộng 1 + 1 như thế nào?</h2>
+      <p>Mạch cộng 2 bit dùng một cổng AND để tính số nhớ (z) và một cổng XOR để tính kết quả (t).</p>
+      <div class="card adder-wrap">
+        <div class="adder-switches">
+          <div class="switch-block"><div class="switch-label">x</div><button class="switch-btn" id="adder-x">0</button></div>
+          <div class="switch-block"><div class="switch-label">y</div><button class="switch-btn" id="adder-y">0</button></div>
+        </div>
+        <div id="adderSvgWrap"></div>
+        <div class="zt-labels"><span><i class="zdot"></i>z = số nhớ (AND)</span><span><i class="tdot"></i>t = kết quả (XOR)</span></div>
+        <div class="adder-result">
+          <div class="eq" id="adder-expression">0 + 0 = 0</div>
+          <div style="margin-top:6px;font-size:15px;font-weight:700;color:var(--muted);">Hai bit đầu ra: zt = <span class="z" id="adder-z">0</span><span class="t" id="adder-t">0</span></div>
+        </div>
+        <table class="truth-table"><thead><tr><th>x</th><th>y</th><th>z (nhớ)</th><th>t (kết quả)</th></tr></thead><tbody id="adder-table-body"></tbody></table>
+        <div class="flow-note">
+          <span class="step">Cộng nhị phân</span><span class="arrow">→</span>
+          <span class="step">Cổng logic</span><span class="arrow">→</span>
+          <span class="step">Mạch điện</span><span class="arrow">→</span>
+          <span class="step">CPU tính toán</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 7 (4): QUIZ ===== -->
+<div class="step-screen" data-step="7">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 4 / 5 · THỬ THÁCH CUỐI BÀI</div></div>
+  <section>
+    <div class="section-inner">
+      <span class="section-tag">🏆 TỔNG ÔN TẬP</span>
+      <h2 class="section-title">Thử thách cuối bài</h2>
+      <p>Trả lời 10 câu hỏi để hoàn thành bài học.</p>
+      <div id="quizArea"></div>
+      <div class="quiz-actions"><button class="btn btn-primary" id="quizSubmit">NỘP BÀI</button></div>
+      <div id="quizResultArea"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== STEP 8 (5): EXIT TICKET ===== -->
+<div class="step-screen" data-step="8">
+  <div class="step-header"><div class="step-crumb">NHIỆM VỤ 5 / 5 · EXIT TICKET — 3 PHÚT CUỐI GIỜ</div></div>
+  <section style="background:#F0FDF4;">
+    <div class="section-inner">
+      <span class="section-tag" style="background:#DCFCE7;color:#166534;">🎫 EXIT TICKET</span>
+      <h2 class="section-title">Trước khi rời lớp...</h2>
+      <p>Không có đáp án đúng hay sai ở phần này. Hãy phản tư ngắn gọn để biết mình đã tiến bộ ở đâu và cần luyện thêm điều gì.</p>
+
+      <div class="card exit-card">
+        <div class="exit-intro"><div class="icon">🌱</div><div><b>Tư duy phát triển:</b> mục tiêu không phải là “không sai”, mà là biết dùng phản hồi để điều chỉnh cách học. Hoàn thành Exit Ticket nhận <b>+30 XP phản tư</b>.</div></div>
+
+        <div class="exit-grid">
+          <div class="exit-q">
+            <h3>1. Sau bài học, em hiểu rõ nhất nội dung nào?</h3>
+            <select id="exitStrong">
+              <option value="">— Chọn một nội dung —</option>
+              <option>CPU và các bộ phận bên trong máy tính</option>
+              <option>RAM, ROM, HDD và SSD</option>
+              <option>Các cổng logic AND, OR, NOT, XOR</option>
+              <option>Phép cộng nhị phân</option>
+              <option>Mạch cộng 2 bit: AND + XOR</option>
+            </select>
+          </div>
+
+          <div class="exit-q">
+            <h3>2. Em còn muốn luyện thêm nội dung nào?</h3>
+            <select id="exitPractice">
+              <option value="">— Chọn một nội dung —</option>
+              <option>Nhận diện phần cứng</option>
+              <option>Phân biệt RAM, ROM, HDD, SSD</option>
+              <option>Cổng logic AND, OR, NOT, XOR</option>
+              <option>Cộng nhị phân có nhớ</option>
+              <option>Mạch cộng 2 bit</option>
+              <option>Em đã khá tự tin với toàn bài</option>
+            </select>
+          </div>
+
+          <div class="exit-q">
+            <h3>3. Mức độ tự tin của em sau bài học</h3>
+            <div class="confidence-row" id="confidenceRow">
+              <button type="button" class="conf-btn" data-conf="1">1</button>
+              <button type="button" class="conf-btn" data-conf="2">2</button>
+              <button type="button" class="conf-btn" data-conf="3">3</button>
+              <button type="button" class="conf-btn" data-conf="4">4</button>
+              <button type="button" class="conf-btn" data-conf="5">5</button>
+            </div>
+            <div class="conf-labels"><span>Cần hỗ trợ</span><span>Rất tự tin</span></div>
+          </div>
+
+          <div class="exit-q">
+            <h3>4. Một điều em học được từ việc thử sai hôm nay</h3>
+            <textarea id="exitReflection" maxlength="180" placeholder="Ví dụ: Khi làm XOR sai, em quay lại quan sát hai đầu vào và nhận ra XOR = 1 khi hai đầu vào khác nhau."></textarea>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:5px;text-align:right;"><span id="exitCount">0</span>/180 ký tự</div>
+          </div>
+        </div>
+
+        <div class="exit-actions">
+          <button class="btn btn-primary" id="exitSubmit">NỘP EXIT TICKET 🎫</button>
+          <button class="btn btn-ghost" id="exitDownload" style="display:none;">TẢI PHIẾU .TXT</button>
+        </div>
+        <div class="exit-feedback" id="exitFeedback"></div>
+        <div class="gas-status" id="gasSyncStatus">☁️ Kết quả sẽ được đồng bộ lên Google Sheets khi nộp Exit Ticket.</div>
+        <div id="exitSummary" style="display:none;"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<!-- ============ BOTTOM NAV ============ -->
+<div class="bottomnav" id="bottomnav">
+  <button class="btn btn-ghost btn-sm" id="backBtn">← Quay lại</button>
+  <div class="bn-info">
+    <span id="bnStepCount">Bước 1/9</span>
+    <span class="stepname" id="bnStepName">Nhận diện thiết bị</span>
+  </div>
+  <div class="bn-actions">
+    <span class="lockhint" id="lockHint">Hoàn thành hoạt động để tiếp tục</span>
+    <button class="btn btn-primary" id="continueBtn" disabled>Tiếp tục →</button>
+  </div>
+</div>
+
+<!-- ============ FINAL SCREEN ============ -->
+<div id="finalScreen">
+  <div class="box">
+    <div class="medal">🏅</div>
+    <h2>Chúc mừng <span class="fname" id="finalName">bạn</span>!</h2>
+    <p id="finalClass"></p>
+    <p>Bạn đã hoàn thành toàn bộ 5 nhiệm vụ của <b style="color:#fff;">Bài 4 — Bên trong máy tính</b>.</p>
+    <p id="finalScoreLine" style="color:#fff; font-weight:700; font-size:18px;"></p>
+    <p id="finalXPLine" style="color:#FDE68A; font-weight:900; font-size:20px;"></p>
+    <div class="growth-final" id="finalGrowthLine">🌱 Tiến bộ đến từ việc thử, nhận phản hồi, điều chỉnh và thử lại.</div>
+    <div id="finalExitSummary" style="margin:0 0 16px;color:#D1FAE5;font-size:13.5px;line-height:1.5;"></div>
+    <div class="takeaway-grid">
+      <div class="takeaway">🧠 <b>CPU</b> → điều khiển và xử lí; gồm CU, ALU, thanh ghi/cache.</div>
+      <div class="takeaway">💾 <b>RAM/ROM</b> → bộ nhớ trong; RAM tạm thời, ROM lưu lâu dài.</div>
+      <div class="takeaway">🗄️ <b>HDD/SSD</b> → lưu trữ lâu dài, dung lượng lớn.</div>
+      <div class="takeaway">⚙️ <b>Mạch logic</b> → nền tảng xử lí dữ liệu nhị phân của thiết bị số.</div>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-secondary" id="reviewBtn">XEM LẠI QUIZ</button>
+      <button class="btn btn-secondary" id="finalExitDownload">TẢI EXIT TICKET</button>
+      <button class="btn btn-orange" id="restartBtn">LÀM LẠI TOÀN BỘ</button>
+    </div>
+  </div>
+</div>
+
+<div class="xp-toast" id="xpToast" role="status" aria-live="polite"><div class="xp-main" id="xpToastMain"></div><div class="xp-sub" id="xpToastSub"></div></div>
+<footer>Bài 4 · Bên trong máy tính · Tin học 11 · GV Huỳnh Văn Diễn · Web thực hành 45 phút · Growth Mindset + XP + Exit Ticket · Google Apps Script</footer>
+
+<script>
+/* ==================== TIỆN ÍCH CHUNG ==================== */
+const STEP_TASK = [0,0,0,1,1,2,2,3,4]; // mỗi bước thuộc nhiệm vụ nào (0-4)
+const STEP_NAMES = ["Nhận diện thiết bị","CPU – RAM – ROM","Thử thách hiệu năng","Phòng thí nghiệm Logic","Dự đoán logic","Cộng nhị phân","Mạch cộng 2 bit","Thử thách cuối bài","Exit Ticket"];
+const TOTAL_STEPS = STEP_TASK.length;
+const stepDone = new Array(TOTAL_STEPS).fill(false);
+let currentStep = 0;
+let studentName = '', studentClass = '';
+let teacherMode = false;
+
+function renderTeacherStepGrid(){
+  const grid=document.getElementById('teacherStepGrid');
+  if(!grid) return;
+  grid.innerHTML=STEP_NAMES.map((name,i)=>{
+    const task=STEP_TASK[i]+1;
+    return `<button type="button" class="teacher-step-btn ${i===currentStep?'active':''}" data-teacher-step="${i}"><b>N${task}</b> · ${i+1}. ${name}</button>`;
+  }).join('');
+  grid.querySelectorAll('[data-teacher-step]').forEach(btn=>btn.addEventListener('click',()=>goToStep(Number(btn.dataset.teacherStep))));
+}
+
+// ===== GOOGLE APPS SCRIPT BACKEND =====
+const GAS_AVAILABLE = typeof google !== 'undefined' && google.script && google.script.run;
+let sessionId = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('S-'+Date.now()+'-'+Math.random().toString(36).slice(2,10));
+let teacherToken = '';
+function browserId(){
+  let id='';
+  try{ id=localStorage.getItem('th11_b4_browser_id')||''; if(!id){ id='B-'+Date.now()+'-'+Math.random().toString(36).slice(2,12); localStorage.setItem('th11_b4_browser_id',id); } }catch(e){ id='B-'+Math.random().toString(36).slice(2,12); }
+  return id;
+}
+function gasCall(fn, args=[], onOk=()=>{}, onFail=()=>{}){
+  if(!GAS_AVAILABLE){ onFail(new Error('Trang này cần được chạy qua Google Apps Script Web App để đồng bộ dữ liệu.')); return; }
+  let runner=google.script.run.withSuccessHandler(onOk).withFailureHandler(onFail);
+  runner[fn](...args);
+}
+function setGasStatus(text, cls=''){
+  const el=document.getElementById('gasSyncStatus'); if(!el) return;
+  el.className='gas-status '+cls; el.textContent=text;
+}
+function lessonElapsedSeconds(){ return Math.max(0,45*60-lessonSeconds); }
+function buildSubmissionPayload(status='COMPLETE'){
+  return {
+    sessionId, status, studentName, studentClass,
+    quizScore: window.__lastQuizScore ?? '', xp: xpState.total,
+    confidence: exitTicket.confidence||'', strong: exitTicket.strong||'', practice: exitTicket.practice||'', reflection: exitTicket.reflection||'',
+    elapsedSeconds: lessonElapsedSeconds(), completedSteps: stepDone.filter(Boolean).length+'/'+TOTAL_STEPS,
+    xpHistory: xpState.history, userAgent: navigator.userAgent, submittedAt: new Date().toISOString()
+  };
+}
+function saveCheckpoint(status='QUIZ'){
+  if(teacherMode || !GAS_AVAILABLE || !studentName || studentName==='GIÁO VIÊN') return;
+  gasCall('saveStudentResult',[buildSubmissionPayload(status)],()=>{},()=>{});
+}
+
+// ===== TEACHER MODE PASSWORD — KIỂM TRA Ở SERVER, KHÔNG LỘ MẬT KHẨU TRONG HTML =====
+let teacherPasswordTargetFromLanding = false;
+
+function openTeacherPassword(fromLanding=false){
+  teacherPasswordTargetFromLanding = !!fromLanding;
+  const modal = document.getElementById('teacherLockModal');
+  const input = document.getElementById('teacherPassInput');
+  const err = document.getElementById('teacherLockError');
+  input.value=''; input.type='password';
+  document.getElementById('teacherPassToggle').textContent='👁';
+  err.textContent = GAS_AVAILABLE ? '' : '⚠️ Teacher Mode bảo mật chỉ hoạt động khi chạy qua Google Apps Script Web App.';
+  err.classList.remove('teacher-lockout');
+  modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+  setTimeout(()=>input.focus(),50);
+}
+
+function closeTeacherPassword(){
+  const modal = document.getElementById('teacherLockModal');
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden','true');
+  document.getElementById('teacherPassInput').value='';
+  document.getElementById('teacherLockError').textContent='';
+}
+
+function verifyTeacherPassword(){
+  const input=document.getElementById('teacherPassInput');
+  const err=document.getElementById('teacherLockError');
+  const pass=input.value;
+  if(!pass){ err.textContent='Vui lòng nhập mật khẩu giáo viên.'; return; }
+  err.textContent='Đang xác thực với Google Apps Script…'; err.classList.remove('teacher-lockout');
+  document.getElementById('teacherLockConfirm').disabled=true;
+  gasCall('verifyTeacherPassword',[pass,browserId()],res=>{
+    document.getElementById('teacherLockConfirm').disabled=false;
+    if(res && res.ok){
+      teacherToken=res.token||'';
+      closeTeacherPassword();
+      setTeacherMode(true, teacherPasswordTargetFromLanding);
+      return;
+    }
+    input.value=''; input.focus();
+    if(res && res.locked){ err.textContent=`Teacher Mode đang khóa tạm thời. Thử lại sau ${res.retryAfter||30} giây.`; err.classList.add('teacher-lockout'); }
+    else err.textContent=(res && res.message) ? res.message : 'Mật khẩu chưa đúng.';
+  },e=>{
+    document.getElementById('teacherLockConfirm').disabled=false;
+    err.textContent='Không thể xác thực. Hãy mở trang bằng URL Web App của Google Apps Script.';
+  });
+}
+
+document.getElementById('teacherLockConfirm').addEventListener('click',verifyTeacherPassword);
+document.getElementById('teacherLockCancel').addEventListener('click',closeTeacherPassword);
+document.getElementById('teacherPassInput').addEventListener('keydown',e=>{ if(e.key==='Enter') verifyTeacherPassword(); if(e.key==='Escape') closeTeacherPassword(); });
+document.getElementById('teacherPassToggle').addEventListener('click',()=>{
+  const input=document.getElementById('teacherPassInput');
+  const showing=input.type==='text';
+  input.type=showing?'password':'text';
+  document.getElementById('teacherPassToggle').textContent=showing?'👁':'🙈';
+  input.focus();
+});
+document.getElementById('teacherLockModal').addEventListener('click',e=>{ if(e.target.id==='teacherLockModal') closeTeacherPassword(); });
+
+function setTeacherMode(on, fromLanding=false){
+  teacherMode=!!on;
+  document.body.classList.toggle('teacher-mode', teacherMode);
+  const b=document.getElementById('teacherModeBtn');
+  if(b){ b.classList.toggle('on',teacherMode); b.textContent=teacherMode?'👨‍🏫 Teacher Mode: ON':'👨‍🏫 Teacher Mode'; }
+  document.getElementById('teacherBanner')?.classList.toggle('show',teacherMode);
+  document.getElementById('teacherPanel')?.classList.toggle('show',teacherMode);
+  document.getElementById('teacherCorner')?.classList.toggle('show',teacherMode);
+  document.querySelectorAll('.task-pill').forEach(p=>p.classList.toggle('teacher-open',teacherMode));
+  if(teacherMode){
+    if(lessonTimer){ clearInterval(lessonTimer); lessonTimer=null; }
+    const tt=document.getElementById('timerText'); if(tt) tt.textContent='⏸ GV';
+    renderTeacherStepGrid();
+    if(fromLanding){
+      studentName='GIÁO VIÊN'; studentClass='Teacher Mode';
+      document.getElementById('landing').style.display='none';
+      document.getElementById('topbar').classList.add('show');
+      document.getElementById('bottomnav').classList.add('show');
+      document.getElementById('whoText').textContent='👨‍🏫 HUỲNH VĂN DIỄN · Teacher Mode';
+      goToStep(0);
+    }
+  }else{
+    teacherToken='';
+    if(studentName && studentName!=='GIÁO VIÊN') startLessonTimer();
+    renderLessonTimer();
+  }
+  updateTopbar(); updateBottomNav();
+}
+
+const exitTicket = { strong:'', practice:'', confidence:0, reflection:'', submitted:false };
+
+/* ==================== GROWTH MINDSET + XP ==================== */
+const XP_MULTIPLIERS = [1, .70, .50, .30]; // lần 1, 2, 3, từ lần 4
+const xpState = { total:0, awarded:new Set(), attempts:Object.create(null), history:[] };
+let xpToastTimer=null;
+function xpAttempt(key){ return xpState.attempts[key] || 1; }
+function xpRate(attempt){ return XP_MULTIPLIERS[Math.min(Math.max(attempt,1)-1, XP_MULTIPLIERS.length-1)]; }
+function xpRatePct(attempt){ return Math.round(xpRate(attempt)*100); }
+function updateXPUI(){
+  const el=document.getElementById('xpText');
+  if(el) el.textContent = xpState.total+' XP';
+}
+const growthMissMessages = [
+  'Chưa đúng không có nghĩa là chưa giỏi — đó là dữ liệu để điều chỉnh chiến lược.',
+  'Sai lần này giúp bạn biết chính xác phần nào cần quan sát lại. Hãy thử thêm một cách.',
+  'Não học tốt khi được thử → nhận phản hồi → sửa → thử lại.',
+  'Bạn chưa có đáp án đúng… nhưng bạn đang tiến gần hơn. Quan sát dấu hiệu rồi thử lại.'
+];
+function showXPToast(main, sub, miss=false){
+  const toast=document.getElementById('xpToast'); if(!toast) return;
+  document.getElementById('xpToastMain').textContent=main;
+  document.getElementById('xpToastSub').textContent=sub||'';
+  toast.classList.toggle('miss',!!miss); toast.classList.add('show');
+  clearTimeout(xpToastTimer); xpToastTimer=setTimeout(()=>toast.classList.remove('show'),3200);
+}
+function registerMiss(key, specificHint=''){
+  if(teacherMode){ showXPToast('👨‍🏫 Teacher Mode','Phản hồi minh họa — không tính lượt thử/XP.',false); return; }
+  if(xpState.awarded.has(key)) return;
+  xpState.attempts[key]=xpAttempt(key)+1;
+  const next=xpAttempt(key), msg=growthMissMessages[(next-2)%growthMissMessages.length];
+  showXPToast('🌱 Chưa đúng — tiếp tục thử!', specificHint || msg, true);
+}
+function awardXP(key, baseXP, label, opts={}){
+  if(teacherMode){ showXPToast('👨‍🏫 Teacher Mode',`Mô phỏng: +${baseXP} XP (không ghi vào tiến độ).`,false); return 0; }
+  if(xpState.awarded.has(key)) return 0;
+  const attempt=xpAttempt(key);
+  const rate=opts.fixed ? 1 : xpRate(attempt);
+  const pts=Math.max(1,Math.round(baseXP*rate));
+  xpState.awarded.add(key); xpState.total += pts;
+  xpState.history.push({key,label,baseXP,attempt,rate,pts});
+  updateXPUI();
+  const growth = attempt===1
+    ? 'Đúng ngay lần đầu: nhận 100% XP.'
+    : `Bạn đã điều chỉnh sau ${attempt-1} lần thử — đó chính là tư duy phát triển. Nhận ${Math.round(rate*100)}% XP.`;
+  showXPToast(`⚡ +${pts} XP · ${label}`, growth, false);
+  return pts;
+}
+
+let lessonSeconds = 45*60, lessonTimer = null;
+function renderLessonTimer(){
+  const el=document.getElementById('timerText'); if(!el) return;
+  const m=Math.floor(lessonSeconds/60), sec=lessonSeconds%60;
+  el.textContent='⏱ '+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  el.classList.toggle('warn', lessonSeconds<=10*60 && lessonSeconds>5*60);
+  el.classList.toggle('danger', lessonSeconds<=5*60);
+}
+function startLessonTimer(){
+  if(lessonTimer) return;
+  renderLessonTimer();
+  lessonTimer=setInterval(()=>{ if(lessonSeconds>0) lessonSeconds--; renderLessonTimer(); },1000);
+}
+
+function taskDoneCheck(taskIdx){
+  return STEP_TASK.every((t,i)=> t!==taskIdx || stepDone[i]);
+}
+function updateTopbar(){
+  const doneTasks = [0,1,2,3,4].filter(taskDoneCheck).length;
+  const pct = Math.round(doneTasks/5*100);
+  document.getElementById('barInner').style.width = pct+'%';
+  document.getElementById('pctText').textContent = pct+'%';
+  let blocks=''; for(let i=0;i<5;i++) blocks += taskDoneCheck(i) ? '■':'□';
+  document.getElementById('blocksText').textContent = blocks;
+  document.querySelectorAll('.task-pill').forEach(p=>{
+    const t = parseInt(p.dataset.task);
+    p.classList.toggle('active', t===STEP_TASK[currentStep]);
+    p.classList.toggle('done', taskDoneCheck(t));
+    p.classList.toggle('teacher-open', teacherMode);
+  });
+  if(teacherMode) renderTeacherStepGrid();
+}
+function updateBottomNav(){
+  document.getElementById('bnStepCount').textContent = 'Bước '+(currentStep+1)+'/'+TOTAL_STEPS;
+  document.getElementById('bnStepName').textContent = STEP_NAMES[currentStep];
+  const cBtn = document.getElementById('continueBtn');
+  const done = stepDone[currentStep];
+  cBtn.disabled = teacherMode ? false : !done;
+  cBtn.textContent = teacherMode
+    ? ((currentStep===TOTAL_STEPS-1) ? 'Về đầu bài ↺' : 'Mở bước tiếp →')
+    : ((currentStep===TOTAL_STEPS-1) ? 'HOÀN THÀNH BÀI HỌC' : 'Tiếp tục →');
+  document.getElementById('lockHint').classList.toggle('show', !teacherMode && !done);
+  document.getElementById('backBtn').disabled = (currentStep===0);
+  document.getElementById('backBtn').style.opacity = (currentStep===0)?'.4':'1';
+}
+function goToStep(i){
+  document.querySelectorAll('.step-screen').forEach(s=>s.classList.remove('active'));
+  const target = document.querySelector(`.step-screen[data-step="${i}"]`);
+  target.classList.add('active');
+  currentStep = i;
+  window.scrollTo({top:0, behavior:'smooth'});
+  updateTopbar(); updateBottomNav();
+}
+function markStepDone(i){
+  if(teacherMode) return;
+  if(stepDone[i]) return;
+  stepDone[i] = true;
+  updateTopbar();
+  if(i===currentStep){
+    updateBottomNav();
+    const cBtn=document.getElementById('continueBtn');
+    cBtn.classList.remove('ready'); void cBtn.offsetWidth; cBtn.classList.add('ready');
+  }
+}
+document.getElementById('continueBtn').addEventListener('click', ()=>{
+  if(teacherMode){
+    goToStep(currentStep===TOTAL_STEPS-1 ? 0 : currentStep+1);
+    return;
+  }
+  if(!stepDone[currentStep]) return;
+  if(currentStep === TOTAL_STEPS-1){
+    showFinalScreen();
+    return;
+  }
+  goToStep(currentStep+1);
+});
+document.getElementById('backBtn').addEventListener('click', ()=>{
+  if(currentStep>0) goToStep(currentStep-1);
+});
+document.querySelectorAll('.task-pill').forEach(p=>{
+  p.addEventListener('click', ()=>{
+    const t = parseInt(p.dataset.task);
+    if(!teacherMode && !taskDoneCheck(t)) return;
+    const firstStep = STEP_TASK.indexOf(t);
+    goToStep(firstStep);
+  });
+});
+
+document.getElementById('teacherModeBtn').addEventListener('click',()=>{
+  if(teacherMode){ setTeacherMode(false); return; }
+  openTeacherPassword(false);
+});
+document.getElementById('teacherExitBtn').addEventListener('click',()=>{
+  if(studentName==='GIÁO VIÊN'){ location.reload(); return; }
+  setTeacherMode(false);
+});
+document.getElementById('teacherStartBtn').addEventListener('click',()=>openTeacherPassword(true));
+function showFinalScreen(){
+  if(lessonTimer){ clearInterval(lessonTimer); lessonTimer=null; }
+  document.getElementById('finalName').textContent = studentName || 'bạn';
+  document.getElementById('finalClass').textContent = studentClass ? ('Lớp: '+studentClass) : '';
+  document.getElementById('finalScoreLine').textContent = window.__lastQuizScore!==undefined ? ('Điểm thử thách cuối bài: '+window.__lastQuizScore+' / 10') : '';
+  document.getElementById('finalXPLine').textContent = '⚡ XP tích lũy: '+xpState.total+' XP';
+  const retries = xpState.history.filter(x=>x.attempt>1).length;
+  document.getElementById('finalGrowthLine').textContent = retries>0
+    ? `🌱 Bạn đã có ${retries} lần biến phản hồi thành tiến bộ. Sai không kết thúc việc học — điều chỉnh và thử lại mới là năng lực quan trọng.`
+    : '🌱 Bạn đã hoàn thành với độ chính xác cao. Hãy tiếp tục giữ thói quen dự đoán → kiểm chứng → giải thích.';
+  const fe=document.getElementById('finalExitSummary');
+  if(fe && exitTicket.submitted){
+    fe.innerHTML = `🎫 <b>Exit Ticket:</b> Tự tin ${exitTicket.confidence}/5 · Muốn luyện thêm: ${escapeHtml(exitTicket.practice)}`;
+  }
+  document.getElementById('finalScreen').classList.add('show');
+  document.getElementById('bottomnav').classList.remove('show');
+}
+
+document.getElementById('reviewBtn').addEventListener('click', ()=>{
+  document.getElementById('finalScreen').classList.remove('show');
+  document.getElementById('bottomnav').classList.add('show');
+  goToStep(7);
+});
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  if(!confirm('Làm lại toàn bộ bài thực hành từ đầu?')) return;
+  location.reload();
+});
+
+/* Landing bits */
+(function(){
+  const box = document.getElementById('heroBits');
+  for(let i=0;i<26;i++){
+    const s = document.createElement('span');
+    s.className='bit'; s.textContent = Math.random()>0.5?'1':'0';
+    s.style.left = Math.random()*100+'%';
+    s.style.animationDuration = (6+Math.random()*8)+'s';
+    s.style.animationDelay = (Math.random()*8)+'s';
+    s.style.fontSize = (12+Math.random()*14)+'px';
+    box.appendChild(s);
+  }
+})();
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  const nameEl = document.getElementById('stuName');
+  const classEl = document.getElementById('stuClass');
+  const err = document.getElementById('formError');
+  if(!nameEl.value.trim() || !classEl.value.trim()){
+    err.textContent = 'Vui lòng nhập đầy đủ họ tên và lớp trước khi bắt đầu.';
+    return;
+  }
+  studentName = nameEl.value.trim();
+  studentClass = classEl.value.trim();
+  teacherMode = false;
+  document.getElementById('landing').style.display='none';
+  document.getElementById('topbar').classList.add('show');
+  document.getElementById('bottomnav').classList.add('show');
+  document.getElementById('whoText').textContent = studentName+' · Lớp '+studentClass;
+   startLessonTimer();
+   goToStep(0);
+   if(GAS_AVAILABLE){
+     gasCall('saveStudentResult',[buildSubmissionPayload('STARTED')],()=>{},()=>{});
+   }
+});
+
+/* Generic pointer-based drag & drop */
+function makeDraggable(item, onDrop){
+  item.style.touchAction='none';
+  item.addEventListener('pointerdown', function(e){
+    if(item.classList.contains('used')) return;
+    e.preventDefault();
+    const rect = item.getBoundingClientRect();
+    const clone = item.cloneNode(true);
+    clone.classList.add('dragging-clone');
+    clone.style.width = rect.width+'px';
+    clone.style.position='fixed';
+    clone.style.left = rect.left+'px';
+    clone.style.top = rect.top+'px';
+    clone.style.zIndex = 9999;
+    clone.style.pointerEvents='none';
+    document.body.appendChild(clone);
+    item.style.visibility='hidden';
+    const offsetX = e.clientX-rect.left, offsetY = e.clientY-rect.top;
+    function move(ev){
+      clone.style.left = (ev.clientX-offsetX)+'px';
+      clone.style.top = (ev.clientY-offsetY)+'px';
+    }
+    function up(ev){
+      document.removeEventListener('pointermove',move);
+      document.removeEventListener('pointerup',up);
+      clone.style.display='none';
+      const target = document.elementFromPoint(ev.clientX,ev.clientY);
+      clone.remove();
+      item.style.visibility='visible';
+      const zone = target ? target.closest('.drop-zone,[data-zone]') : null;
+      onDrop(zone,item);
+    }
+    document.addEventListener('pointermove',move);
+    document.addEventListener('pointerup',up);
+  });
+}
+
+/* ==================== BƯỚC 0: NHẬN DIỆN THIẾT BỊ ==================== */
+const DEVICES = [
+  {
+    key:'CPU', label:'CPU',
+    icon:`
+      <g>
+        <!-- Đế chip -->
+        <rect x="11" y="9" width="38" height="38" rx="5" fill="#2F3B52" stroke="#172033" stroke-width="2"/>
+        <!-- Nắp tản nhiệt -->
+        <rect x="17" y="15" width="26" height="26" rx="3" fill="#D8DEE9" stroke="#8793A5" stroke-width="1.5"/>
+        <rect x="21" y="19" width="18" height="18" rx="2" fill="#AEB8C6"/>
+        <!-- Chân chip -->
+        <g fill="#F5C84C">
+          <rect x="5" y="14" width="6" height="3" rx="1"/><rect x="5" y="22" width="6" height="3" rx="1"/><rect x="5" y="30" width="6" height="3" rx="1"/><rect x="5" y="38" width="6" height="3" rx="1"/>
+          <rect x="49" y="14" width="6" height="3" rx="1"/><rect x="49" y="22" width="6" height="3" rx="1"/><rect x="49" y="30" width="6" height="3" rx="1"/><rect x="49" y="38" width="6" height="3" rx="1"/>
+          <rect x="14" y="3" width="3" height="6" rx="1"/><rect x="22" y="3" width="3" height="6" rx="1"/><rect x="30" y="3" width="3" height="6" rx="1"/><rect x="38" y="3" width="3" height="6" rx="1"/>
+          <rect x="14" y="47" width="3" height="6" rx="1"/><rect x="22" y="47" width="3" height="6" rx="1"/><rect x="30" y="47" width="3" height="6" rx="1"/><rect x="38" y="47" width="3" height="6" rx="1"/>
+        </g>
+        <circle cx="15" cy="13" r="1.5" fill="#F97316"/>
+      </g>`
+  },
+  {
+    key:'RAM', label:'RAM',
+    icon:`
+      <g>
+        <!-- Bo mạch RAM -->
+        <rect x="4" y="14" width="52" height="27" rx="3" fill="#168A43" stroke="#0F6630" stroke-width="2"/>
+        <!-- Chip nhớ -->
+        <g fill="#1F2937">
+          <rect x="8" y="19" width="9" height="13" rx="1"/>
+          <rect x="20" y="19" width="9" height="13" rx="1"/>
+          <rect x="32" y="19" width="9" height="13" rx="1"/>
+          <rect x="44" y="19" width="8" height="13" rx="1"/>
+        </g>
+        <!-- Rãnh và chân tiếp xúc -->
+        <rect x="29" y="39" width="5" height="4" fill="#F8FAFC"/>
+        <g fill="#F6C744">
+          <rect x="7" y="41" width="4" height="6"/><rect x="13" y="41" width="4" height="6"/><rect x="19" y="41" width="4" height="6"/><rect x="25" y="41" width="4" height="6"/>
+          <rect x="34" y="41" width="4" height="6"/><rect x="40" y="41" width="4" height="6"/><rect x="46" y="41" width="4" height="6"/><rect x="52" y="41" width="3" height="6"/>
+        </g>
+        <circle cx="53" cy="18" r="1.4" fill="#D1FAE5"/>
+      </g>`
+  },
+  {
+    key:'ROM', label:'ROM',
+    icon:`
+      <g>
+        <!-- IC ROM dạng DIP: không ghi sẵn tên để tránh lộ đáp án -->
+        <rect x="14" y="11" width="32" height="34" rx="4" fill="#303846" stroke="#111827" stroke-width="2"/>
+        <path d="M26 11a4 4 0 0 0 8 0" fill="#F8FAFC" opacity=".7"/>
+        <rect x="20" y="17" width="20" height="22" rx="2" fill="#465164"/>
+        <g stroke="#8B98AA" stroke-width="3" stroke-linecap="round">
+          <path d="M14 16H8"/><path d="M14 23H8"/><path d="M14 30H8"/><path d="M14 37H8"/>
+          <path d="M46 16H52"/><path d="M46 23H52"/><path d="M46 30H52"/><path d="M46 37H52"/>
+        </g>
+        <circle cx="20" cy="17" r="1.5" fill="#F97316"/>
+      </g>`
+  },
+  {
+    key:'SSD', label:'SSD',
+    icon:`
+      <g>
+        <!-- SSD 2.5 inch -->
+        <rect x="9" y="7" width="42" height="43" rx="5" fill="#DCE3EA" stroke="#6B7280" stroke-width="2"/>
+        <rect x="14" y="12" width="32" height="27" rx="3" fill="#EEF2F7" stroke="#A8B2C1"/>
+        <path d="M19 30h22" stroke="#94A3B8" stroke-width="2"/>
+        <path d="M19 25h15" stroke="#CBD5E1" stroke-width="2"/>
+        <!-- 4 lỗ bắt vít -->
+        <g fill="#64748B"><circle cx="14" cy="12" r="2"/><circle cx="46" cy="12" r="2"/><circle cx="14" cy="45" r="2"/><circle cx="46" cy="45" r="2"/></g>
+        <!-- Cổng SATA -->
+        <rect x="17" y="50" width="13" height="4" fill="#334155"/><rect x="33" y="50" width="10" height="4" fill="#334155"/>
+      </g>`
+  },
+  {
+    key:'HDD', label:'HDD',
+    icon:`
+      <g>
+        <!-- Thân ổ cứng -->
+        <rect x="7" y="5" width="46" height="47" rx="5" fill="#C8D2DE" stroke="#556274" stroke-width="2"/>
+        <!-- Đĩa từ -->
+        <circle cx="27" cy="28" r="15" fill="#EEF2F6" stroke="#7B8798" stroke-width="2"/>
+        <circle cx="27" cy="28" r="8" fill="#D9E1E9"/>
+        <circle cx="27" cy="28" r="3" fill="#6B7788"/>
+        <circle cx="27" cy="28" r="1.3" fill="#F8FAFC"/>
+        <!-- Cần đọc -->
+        <circle cx="44" cy="15" r="4" fill="#F97316"/>
+        <path d="M44 17 L35 26 L38 29 L47 21" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M35 26l-4 3" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+        <g fill="#64748B"><circle cx="12" cy="10" r="1.7"/><circle cx="48" cy="47" r="1.7"/></g>
+      </g>`
+  },
+  {
+    key:'MAINBOARD', label:'MAINBOARD',
+    icon:`
+      <g>
+        <!-- PCB -->
+        <rect x="3" y="3" width="54" height="50" rx="3" fill="#238B45" stroke="#14532D" stroke-width="2"/>
+        <!-- Đường mạch -->
+        <g stroke="#86C98F" stroke-width="1" opacity=".8" fill="none">
+          <path d="M8 32h16v14"/><path d="M28 8v12h22"/><path d="M32 44h18"/><path d="M10 12h7v8"/>
+        </g>
+        <!-- Socket CPU -->
+        <rect x="9" y="9" width="20" height="18" rx="2" fill="#D7DEE7" stroke="#64748B"/>
+        <rect x="13" y="13" width="12" height="10" fill="#9AA7B7"/>
+        <!-- Khe RAM -->
+        <rect x="34" y="7" width="4" height="26" rx="1" fill="#1F2937"/>
+        <rect x="41" y="7" width="4" height="26" rx="1" fill="#1F2937"/>
+        <!-- PCIe -->
+        <rect x="10" y="35" width="35" height="4" rx="1" fill="#F8FAFC"/>
+        <rect x="10" y="43" width="27" height="4" rx="1" fill="#E2E8F0"/>
+        <!-- Chipset -->
+        <rect x="46" y="37" width="8" height="8" rx="1" fill="#273449"/>
+        <!-- Cụm cổng I/O -->
+        <rect x="3" y="10" width="6" height="7" fill="#B8C3CF"/><rect x="3" y="20" width="6" height="7" fill="#94A3B8"/>
+        <circle cx="51" cy="10" r="2" fill="#F6C744"/>
+      </g>`
+  },
+  {
+    key:'CARD', label:'CARD MỞ RỘNG',
+    icon:`
+      <g>
+        <!-- Thanh bracket -->
+        <rect x="6" y="8" width="6" height="40" rx="2" fill="#B8C1CC" stroke="#697586"/>
+        <rect x="4" y="12" width="3" height="10" fill="#D7DEE7"/>
+        <!-- Bo mạch -->
+        <path d="M12 15 H52 V42 H18 L12 38 Z" fill="#1B8A5A" stroke="#11623F" stroke-width="2"/>
+        <!-- Chip trung tâm -->
+        <rect x="25" y="21" width="14" height="13" rx="2" fill="#283548"/>
+        <!-- Linh kiện -->
+        <g fill="#90D6B3"><rect x="16" y="19" width="5" height="7"/><rect x="42" y="19" width="6" height="5"/><rect x="42" y="29" width="6" height="5"/></g>
+        <!-- Chân PCIe -->
+        <g fill="#F5C84C"><rect x="18" y="42" width="5" height="6"/><rect x="24" y="42" width="5" height="6"/><rect x="30" y="42" width="5" height="6"/><rect x="36" y="42" width="5" height="6"/></g>
+      </g>`
+  },
+  {
+    key:'PORT', label:'CỔNG KẾT NỐI',
+    icon:`
+      <g>
+        <!-- USB Type-A -->
+        <rect x="3" y="9" width="17" height="13" rx="2" fill="#C9D2DD" stroke="#475569" stroke-width="1.5"/>
+        <rect x="7" y="13" width="9" height="5" rx="1" fill="#2563EB"/>
+        <!-- HDMI -->
+        <path d="M25 10 H43 L46 13 V20 L43 23 H25 L22 20 V13 Z" fill="#3F4A5B" stroke="#1F2937" stroke-width="1.5"/>
+        <path d="M27 15h14" stroke="#CBD5E1" stroke-width="2"/>
+        <!-- RJ45 / LAN -->
+        <rect x="7" y="31" width="20" height="18" rx="2" fill="#D6DEE8" stroke="#475569" stroke-width="1.5"/>
+        <rect x="11" y="34" width="12" height="8" fill="#334155"/>
+        <g stroke="#F5C84C" stroke-width="1"><path d="M12 35v6"/><path d="M15 35v6"/><path d="M18 35v6"/><path d="M21 35v6"/></g>
+        <!-- Audio jack -->
+        <circle cx="43" cy="40" r="8" fill="#2B3442" stroke="#111827" stroke-width="1.5"/>
+        <circle cx="43" cy="40" r="3" fill="#94A3B8"/>
+      </g>`
+  }
+];
+function buildActivity1(){
+  const zonesEl = document.getElementById('a1-zones');
+  const trayEl = document.getElementById('a1-tray');
+  zonesEl.innerHTML = DEVICES.map(d=>`
+    <div class="drop-zone" data-zone data-accept="${d.key}">
+      <svg class="zone-icon" viewBox="0 0 60 56" role="img" aria-label="Hình minh họa thiết bị phần cứng">${d.icon}</svg>
+      <span class="check" style="display:none;">✓</span>
+      <span class="fill-label" style="display:none;"></span>
+    </div>`).join('');
+  const tags = [...DEVICES].sort(()=>Math.random()-0.5);
+  trayEl.innerHTML = tags.map(d=>`<div class="tag" data-value="${d.key}">${d.label}</div>`).join('');
+  let correctCount=0;
+  document.querySelectorAll('#a1-tray .tag').forEach(tagEl=>{
+    makeDraggable(tagEl, (zone,item)=>{
+      if(!zone) return;
+      if(zone.classList.contains('correct')) return;
+      if(zone.dataset.accept === item.dataset.value){
+        zone.classList.add('correct');
+        zone.querySelector('.check').style.display='block';
+        zone.querySelector('.fill-label').style.display='block';
+        zone.querySelector('.fill-label').textContent = item.textContent;
+        item.classList.add('used');
+        awardXP('a1-'+item.dataset.value, 10, 'Nhận diện '+item.textContent);
+        correctCount++;
+        if(correctCount === DEVICES.length){
+          document.getElementById('a1-feedback').textContent = 'Bạn đã nhận diện được các thành phần chính bên trong máy tính.';
+          markStepDone(0);
+        }
+      } else {
+        registerMiss('a1-'+item.dataset.value, 'Hãy quan sát lại hình dạng và đặc điểm của linh kiện rồi thử vị trí khác.');
+        zone.classList.add('wrong');
+        setTimeout(()=>zone.classList.remove('wrong'),400);
+      }
+    });
+  });
+}
+buildActivity1();
+
+/* ==================== BƯỚC 1: PHÂN LOẠI CPU/RAM/ROM/NGOÀI ==================== */
+const A2_TAGS = [
+  {label:'Lưu dữ liệu tạm thời', accept:['ram'], explain:'Bộ nhớ làm việc tạm thời.'},
+  {label:'Mất dữ liệu khi tắt máy', accept:['ram'], explain:'RAM không giữ dữ liệu khi mất điện.'},
+  {label:'Lưu dữ liệu lâu dài', accept:['rom','external'], explain:'Dữ liệu vẫn còn dù tắt máy.'},
+  {label:'ALU', accept:['cpu'], explain:'Bộ số học và logic của CPU.'},
+  {label:'Control Unit', accept:['cpu'], explain:'Bộ điều khiển của CPU.'},
+  {label:'Thanh ghi & Cache', accept:['cpu'], explain:'Bộ nhớ tốc độ cao trong CPU, lưu tạm lệnh và dữ liệu đang xử lí.'},
+  {label:'Xung nhịp GHz', accept:['cpu'], explain:'Tốc độ xung nhịp của CPU.'},
+  {label:'HDD', accept:['external'], explain:'Ổ cứng lưu trữ ngoài, dung lượng lớn.'},
+  {label:'SSD', accept:['external'], explain:'Ổ cứng thể rắn, tốc độ truy cập nhanh.'},
+  {label:'Bộ nhớ trong', accept:['ram','rom'], explain:'RAM và ROM đều là bộ nhớ trong.'},
+  {label:'Bộ nhớ ngoài', accept:['external'], explain:'Lưu trữ lâu dài, dung lượng lớn.'}
+];
+const BINS = [{key:'cpu',name:'CPU'},{key:'ram',name:'RAM'},{key:'rom',name:'ROM'},{key:'external',name:'BỘ NHỚ NGOÀI'}];
+function buildActivity2(){
+  const binsEl = document.getElementById('a2-bins');
+  binsEl.innerHTML = BINS.map(b=>`<div class="bin" data-zone data-bin="${b.key}"><h4>${b.name}</h4><div class="bin-items"></div></div>`).join('');
+  const trayEl = document.getElementById('a2-tray');
+  const shuffled = [...A2_TAGS].sort(()=>Math.random()-0.5);
+  trayEl.innerHTML = shuffled.map((t,i)=>`<div class="tag" data-idx="${i}">${t.label}</div>`).join('');
+  let placed=0;
+  document.querySelectorAll('#a2-tray .tag').forEach(tagEl=>{
+    const data = shuffled[parseInt(tagEl.dataset.idx)];
+    makeDraggable(tagEl,(zone,item)=>{
+      if(!zone || !zone.classList.contains('bin')) return;
+      const binKey = zone.dataset.bin;
+      if(data.accept.includes(binKey)){
+        const box = zone.querySelector('.bin-items');
+        const div = document.createElement('div'); div.className='dropped-item'; div.textContent = data.label; box.appendChild(div);
+        const ex = document.createElement('div'); ex.className='explain'; ex.textContent = '→ '+data.explain; box.appendChild(ex);
+        item.classList.add('used');
+        awardXP('a2-'+data.label, 10, 'Phân loại: '+data.label);
+        placed++;
+        if(placed === A2_TAGS.length){
+          document.getElementById('a2-feedback').textContent = 'Tuyệt vời! Bạn đã phân loại đúng các thành phần bộ nhớ.';
+          markStepDone(1);
+        }
+      } else {
+        registerMiss('a2-'+data.label, 'Đọc lại đặc điểm của thẻ và thử phân biệt CPU, RAM, ROM hay bộ nhớ ngoài.');
+        zone.classList.add('wrong'); setTimeout(()=>zone.classList.remove('wrong'),400);
+      }
+    });
+  });
+}
+buildActivity2();
+
+/* ==================== BƯỚC 2: HIỆU NĂNG ==================== */
+const A3_OPTIONS = [
+  {label:'Xung nhịp CPU', right:true},
+  {label:'Số lõi CPU', right:true},
+  {label:'Tốc độ truy cập bộ nhớ', right:true},
+  {label:'Màu vỏ máy', right:false},
+  {label:'Giá bán', right:false}
+];
+document.getElementById('a3-list').innerHTML = A3_OPTIONS.map((o,i)=>`
+  <label class="check-item" data-idx="${i}"><input type="checkbox"><span>${o.label}</span></label>`).join('');
+document.getElementById('a3-check').addEventListener('click', ()=>{
+  const items = document.querySelectorAll('#a3-list .check-item');
+  let allCorrect = true;
+  items.forEach((el,i)=>{
+    const checked = el.querySelector('input').checked;
+    const isRight = A3_OPTIONS[i].right;
+    el.classList.remove('right','wrong');
+    if(checked === isRight){ if(checked) el.classList.add('right'); }
+    else { el.classList.add('wrong'); allCorrect=false; }
+  });
+  const callout = document.getElementById('a3-callout');
+  callout.style.display='block';
+  if(allCorrect){
+    awardXP('a3-performance', 40, 'Phân tích hiệu năng');
+    callout.innerHTML = '✅ Chính xác! CPU rất quan trọng, nhưng <b>tốc độ truy cập bộ nhớ</b> cũng ảnh hưởng lớn đến hiệu năng — không phải cứ GHz cao là luôn nhanh hơn.';
+    markStepDone(2);
+  } else {
+    registerMiss('a3-performance', 'Hãy tập trung vào các thông số kĩ thuật tác động trực tiếp đến xử lí, không phải yếu tố bên ngoài.');
+    callout.innerHTML = '⚠️ Một vài lựa chọn chưa đúng (viền đỏ). <b>Chưa đúng là tín hiệu để điều chỉnh.</b> Hãy nghĩ đến những thông số kĩ thuật ảnh hưởng trực tiếp đến tốc độ xử lí.';
+  }
+});
+document.getElementById('a3-reset').addEventListener('click', ()=>{
+  document.querySelectorAll('#a3-list input').forEach(i=>i.checked=false);
+  document.querySelectorAll('#a3-list .check-item').forEach(el=>el.classList.remove('right','wrong'));
+  document.getElementById('a3-callout').style.display='none';
+});
+
+/* ==================== LOGIC GATES ==================== */
+function AND(x,y){return (x&y);}
+function OR(x,y){return (x|y);}
+function NOTf(x){return x?0:1;}
+function XOR(x,y){return (x^y);}
+function gateSvg(type){
+  if(type==='NOT'){
+    return `<svg viewBox="0 0 220 100" width="260">
+      <line x1="10" y1="50" x2="70" y2="50" class="wire" id="w-in1"/>
+      <path d="M70,20 L70,80 L140,50 Z" class="gate-shape" id="gshape"/>
+      <circle cx="148" cy="50" r="7" class="gate-shape" id="gbubble"/>
+      <line x1="155" y1="50" x2="200" y2="50" class="wire" id="w-out"/>
+      <circle cx="210" cy="50" r="9" class="lamp lamp-off" id="lamp"/>
+      <text x="95" y="95" text-anchor="middle" class="gate-name-txt">NOT</text></svg>`;
+  }
+  const backCurve = type==='XOR' ? `<path d="M8,15 C22,30 22,70 8,85" class="wire" id="w-xorback" style="stroke-width:4;"/>` : '';
+  return `<svg viewBox="0 0 220 100" width="260">
+      <line x1="0" y1="30" x2="${type==='XOR'?'34':'30'}" y2="30" class="wire" id="w-in1"/>
+      <line x1="0" y1="70" x2="${type==='XOR'?'34':'30'}" y2="70" class="wire" id="w-in2"/>
+      ${backCurve}
+      ${type==='AND' ? `<path d="M30,10 L70,10 A40,40 0 0 1 70,90 L30,90 Z" class="gate-shape" id="gshape"/>`
+        : `<path d="M30,10 C65,10 90,25 118,50 C90,75 65,90 30,90 C45,70 45,30 30,10 Z" class="gate-shape" id="gshape"/>`}
+      <line x1="${type==='AND'?'110':'118'}" y1="50" x2="200" y2="50" class="wire" id="w-out"/>
+      <circle cx="210" cy="50" r="9" class="lamp lamp-off" id="lamp"/>
+      <text x="60" y="118" text-anchor="middle" class="gate-name-txt">${type}</text></svg>`;
+}
+function buildGateCard(type, badgeColor){
+  const twoInput = type!=='NOT';
+  return `<div class="gate-card" data-gate="${type}">
+    <h3><span class="gate-badge" style="background:${badgeColor}">${type[0]}</span>${type==='AND'?'Cổng AND':type==='OR'?'Cổng OR':type==='NOT'?'Cổng NOT':'Cổng XOR'}</h3>
+    <div class="switch-row">
+      <div class="switch-block"><div class="switch-label">x</div><button class="switch-btn" data-sw="x">0</button></div>
+      ${twoInput?`<div class="switch-block"><div class="switch-label">y</div><button class="switch-btn" data-sw="y">0</button></div>`:''}
+    </div>
+    <div class="gate-svg-wrap">${gateSvg(type)}</div>
+    <div class="output-readout">Đầu ra = <span class="val off" data-out>0</span></div>
+    <table class="truth-table"><thead><tr><th>x</th>${twoInput?'<th>y</th>':''}<th>Ra</th></tr></thead><tbody data-tt></tbody></table>
+    <div class="gate-actions"><button class="btn btn-orange btn-sm" data-viewrule disabled>XEM QUY LUẬT</button></div>
+    <div class="hint-text" data-hint>Hãy thử đủ các trường hợp trước khi xem quy luật.</div>
+    <div class="rule-box" data-rulebox></div>
+  </div>`;
+}
+const GATE_DEFS = [
+  {type:'AND', badge:'#7C3AED', rule:'Cổng AND: kết quả bằng 1 khi CẢ HAI đầu vào đều bằng 1.'},
+  {type:'OR', badge:'#2563EB', rule:'Cổng OR: kết quả bằng 1 khi ÍT NHẤT MỘT đầu vào bằng 1.'},
+  {type:'NOT', badge:'#F97316', rule:'Cổng NOT: đảo giá trị đầu vào (0→1, 1→0).'},
+  {type:'XOR', badge:'#06B6D4', rule:'Cổng XOR: kết quả bằng 1 khi HAI đầu vào KHÁC NHAU.'}
+];
+document.getElementById('gateGrid').innerHTML = GATE_DEFS.map(g=>buildGateCard(g.type, g.badge)).join('');
+const ruleViewedSet = new Set();
+function updateGateOverallProgress(){
+  document.getElementById('gateOverallProgress').textContent = `Đã khám phá quy luật: ${ruleViewedSet.size}/4 cổng`;
+  if(ruleViewedSet.size>=4) markStepDone(3);
+}
+function initGateCard(card, def){
+  const type = def.type;
+  const twoInput = type!=='NOT';
+  let x=0,y=0;
+  const tried = new Set();
+  const totalCombos = twoInput ? 4 : 2;
+  const ttBody = card.querySelector('[data-tt]');
+  const combos = twoInput ? [[0,0],[0,1],[1,0],[1,1]] : [[0],[1]];
+  ttBody.innerHTML = combos.map(c=>{
+    const key = c.join('');
+    return `<tr data-row="${key}"><td class="pending">${c[0]}</td>${twoInput?`<td class="pending">${c[1]}</td>`:''}<td class="pending" data-cell>?</td></tr>`;
+  }).join('');
+  function compute(){
+    if(type==='AND') return AND(x,y);
+    if(type==='OR') return OR(x,y);
+    if(type==='NOT') return NOTf(x);
+    return XOR(x,y);
+  }
+  function render(recordTrial=true){
+    const out = compute();
+    const svg = card.querySelector('svg');
+    const in1 = svg.querySelector('#w-in1'); if(in1) in1.classList.toggle('active', !!x);
+    const in2 = svg.querySelector('#w-in2'); if(in2) in2.classList.toggle('active', !!y);
+    const xorback = svg.querySelector('#w-xorback'); if(xorback) xorback.classList.toggle('active', !!x || !!y);
+    const outWire = svg.querySelector('#w-out'); if(outWire) outWire.classList.toggle('active', !!out);
+    const gshape = svg.querySelector('#gshape'); if(gshape) gshape.classList.toggle('on', (twoInput? (x||y) : x));
+    const lamp = svg.querySelector('#lamp');
+    lamp.classList.toggle('lamp-on', !!out); lamp.classList.toggle('lamp-off', !out);
+    const valEl = card.querySelector('[data-out]');
+    valEl.textContent = out; valEl.classList.toggle('on',!!out); valEl.classList.toggle('off',!out);
+    const key = twoInput ? (''+x+y) : (''+x);    if(recordTrial){
+      tried.add(key);
+      const row = ttBody.querySelector(`tr[data-row="${key}"]`);
+      if(row){ row.querySelector('[data-cell]').textContent = out; row.querySelector('[data-cell]').classList.remove('pending'); row.querySelector('[data-cell]').classList.add('tried'); }
+    }
+    const btn = card.querySelector('[data-viewrule]');
+    if(tried.size >= totalCombos){ btn.disabled = false; card.querySelector('[data-hint]').textContent = 'Bạn đã thử đủ các trường hợp — bấm để xem quy luật!'; }
+  }
+  card.querySelectorAll('[data-sw]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(btn.dataset.sw==='x'){ x = x?0:1; } else { y = y?0:1; }
+      btn.textContent = btn.dataset.sw==='x'?x:y;
+      btn.classList.toggle('on', btn.dataset.sw==='x'?!!x:!!y);
+      render(true);
+    });
+  });
+  render(false);
+  card.querySelector('[data-viewrule]').addEventListener('click', ()=>{
+    const box = card.querySelector('[data-rulebox]');
+    box.textContent = def.rule; box.classList.add('show');
+    if(!ruleViewedSet.has(type)) awardXP('gate-'+type, 10, 'Khám phá cổng '+type, {fixed:true});
+    ruleViewedSet.add(type); updateGateOverallProgress();
+  });
+  card._setXY = function(nx,ny){
+    x=nx; y=ny;
+    const bx = card.querySelector('[data-sw="x"]'); if(bx){bx.textContent=x; bx.classList.toggle('on',!!x);}
+    const by = card.querySelector('[data-sw="y"]'); if(by){by.textContent=y; by.classList.toggle('on',!!y);}
+    render(true);
+  };
+}
+document.querySelectorAll('.gate-card').forEach(card=>{
+  const def = GATE_DEFS.find(g=>g.type===card.dataset.gate);
+  initGateCard(card, def);
+});
+
+/* ==================== BƯỚC 4: PREDICTION ==================== */
+let predX=0, predY=0, correctStreak=0, predRound=0;
+const predRows = document.getElementById('predict-rows');
+function newPredictRound(){
+  predRound++;
+  predX = Math.round(Math.random()); predY = Math.round(Math.random());
+  document.getElementById('pred-x').textContent = predX;
+  document.getElementById('pred-y').textContent = predY;
+  const gates = [{n:'AND'},{n:'OR'},{n:'XOR'}];
+  predRows.innerHTML = gates.map(g=>`<div class="predict-row" data-gate="${g.n}"><span class="gname">${g.n} = ?</span><div class="pick-btns"><button class="pick-btn" data-val="0">0</button><button class="pick-btn" data-val="1">1</button></div></div>`).join('');
+  document.getElementById('predictFeedback').textContent=''; document.getElementById('predictFeedback').className='predict-feedback';
+  document.getElementById('predictSim').style.display='none';
+  predRows.querySelectorAll('.pick-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const row = b.closest('.predict-row');
+      row.querySelectorAll('.pick-btn').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel');
+    });
+  });
+}
+newPredictRound();
+document.getElementById('predictCheck').addEventListener('click', ()=>{
+  const gates = {AND:AND(predX,predY), OR:OR(predX,predY), XOR:XOR(predX,predY)};
+  let allOk = true;
+  predRows.querySelectorAll('.predict-row').forEach(row=>{
+    const gname = row.dataset.gate;
+    const sel = row.querySelector('.pick-btn.sel');
+    row.querySelectorAll('.pick-btn').forEach(b=>b.classList.remove('right','wrongpick'));
+    if(!sel){ allOk=false; return; }
+    const val = parseInt(sel.dataset.val);
+    if(val === gates[gname]) sel.classList.add('right'); else { sel.classList.add('wrongpick'); allOk=false; }
+  });
+  const fb = document.getElementById('predictFeedback');
+  if(allOk){
+    awardXP('pred-'+predRound, 20, 'Dự đoán logic lượt '+predRound);
+    correctStreak++;
+    fb.textContent = '✓ Chính xác!'; fb.className='predict-feedback ok';
+    document.getElementById('predictSim').style.display='none';
+    document.getElementById('predictStreak').textContent = 'Số lượt đúng: '+Math.min(correctStreak,3)+' / 3';
+    if(correctStreak>=3){
+      markStepDone(4);
+      fb.textContent='✓ Chính xác! Bạn đã hoàn thành Phòng thí nghiệm Logic!';
+      document.getElementById('predictCheck').disabled=true;
+    } else {
+      setTimeout(newPredictRound, 1100);
+    }
+  } else {
+    registerMiss('pred-'+predRound, 'Hãy dùng mô phỏng để kiểm chứng AND, OR, XOR rồi quay lại dự đoán.');
+    fb.textContent = 'Chưa đúng hết. Đây là cơ hội kiểm chứng giả thuyết — hãy thử trên mô phỏng rồi quay lại!'; fb.className='predict-feedback bad';
+    document.getElementById('predictSim').style.display='inline-block';
+  }
+});
+document.getElementById('predictSim').addEventListener('click', ()=>{
+  goToStep(3);
+  document.querySelectorAll('.gate-card').forEach(card=>{ if(card._setXY) card._setXY(predX,predY); });
+});
+
+/* ==================== BƯỚC 5: CỘNG NHỊ PHÂN ==================== */
+const BASIC_SUMS = [[0,0],[0,1],[1,0],[1,1]];
+document.getElementById('basicSums').innerHTML = BASIC_SUMS.map((s,i)=>`
+  <div class="sum-card"><div class="expr">${s[0]} + ${s[1]}</div><div class="res" data-res="${i}">?</div><button class="btn btn-ghost btn-sm" data-show="${i}">THỬ</button></div>`).join('');
+let viewedBasic = new Set();
+let basicSumsViewed=false, ex1Done=false, ex2Done=false;
+function checkBinaryTaskDone(){ if(basicSumsViewed && ex1Done && ex2Done) markStepDone(5); }
+document.querySelectorAll('[data-show]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const i = parseInt(btn.dataset.show);
+    const [a,b] = BASIC_SUMS[i];
+    const sum = a+b;
+    const bin = sum===2 ? '10' : String(sum);
+    document.querySelector(`[data-res="${i}"]`).textContent = bin;
+    if(!viewedBasic.has(i)) awardXP('basic-sum-'+i, 5, 'Khám phá '+a+' + '+b, {fixed:true});
+    viewedBasic.add(i);
+    if(viewedBasic.size===BASIC_SUMS.length){ basicSumsViewed = true; checkBinaryTaskDone(); }
+  });
+});
+document.getElementById('carryPlay').addEventListener('click', ()=>{
+  const carryBit = document.getElementById('carryBit');
+  carryBit.classList.remove('show'); void carryBit.offsetWidth;
+  setTimeout(()=>carryBit.classList.add('show'), 150);
+});
+function checkExercise(id, expectedDecimal){
+  const input = document.getElementById('ex'+id+'-input');
+  const resEl = document.getElementById('res-'+id);
+  const val = input.value.trim();
+  if(!/^[01]+$/.test(val)){ resEl.textContent = 'Vui lòng nhập một số nhị phân (chỉ gồm 0 và 1).'; resEl.className='result-msg bad'; return; }
+  const dec = parseInt(val,2);
+  if(dec === expectedDecimal){
+    awardXP('binary-ex-'+id, 30, 'Bài cộng nhị phân '+id);
+    resEl.textContent = '✓ Chính xác! '+val+' đúng là kết quả.'; resEl.className='result-msg ok';
+    if(id==='1') ex1Done=true; else ex2Done=true;
+    checkBinaryTaskDone();
+  } else { registerMiss('binary-ex-'+id, 'Kiểm tra từng cột từ phải sang trái và theo dõi bit nhớ.'); resEl.textContent = 'Chưa đúng. Hãy xem đây là dữ liệu để kiểm tra lại từng cột và bit nhớ.'; resEl.className='result-msg bad'; }
+}
+document.querySelectorAll('[data-check]').forEach(btn=>{ btn.addEventListener('click', ()=>{ checkExercise(btn.dataset.check, btn.dataset.check==='1'?15:20); }); });
+document.querySelectorAll('[data-hint]').forEach(btn=>{ btn.addEventListener('click', ()=>{ document.getElementById('hint-'+btn.dataset.hint).classList.toggle('show'); }); });
+function randBinary(bits){ let s=''; for(let i=0;i<bits;i++) s += Math.round(Math.random()); return s.replace(/^0+(?=.)/,''); }
+let extraAnswer = 0;
+function genExtra(){
+  const a = randBinary(4)||'0', b = randBinary(3)||'0';
+  const da = parseInt(a,2), db = parseInt(b,2);
+  extraAnswer = da+db;
+  document.getElementById('extraExercise').innerHTML = `<div class="binexpr"><div class="line">&nbsp;${a}</div><div class="line">+${(' '.repeat(Math.max(0,a.length-b.length)))}${b}</div><input type="text" id="extra-input" placeholder="?" maxlength="8"></div>`;
+  document.getElementById('extraRes').textContent='';
+}
+genExtra();
+document.getElementById('extraNew').addEventListener('click', genExtra);
+document.getElementById('extraCheck').addEventListener('click', ()=>{
+  const val = document.getElementById('extra-input').value.trim();
+  const resEl = document.getElementById('extraRes');
+  if(!/^[01]+$/.test(val)){ resEl.textContent='Vui lòng nhập số nhị phân hợp lệ.'; resEl.className='result-msg bad'; return; }
+  const dec = parseInt(val,2);
+  if(dec===extraAnswer){ awardXP('extra-bonus', 15, 'Bài luyện thêm'); resEl.textContent='✓ Chính xác! Bạn nhận XP thưởng cho bài luyện thêm.'; resEl.className='result-msg ok'; }
+  else { registerMiss('extra-bonus', 'Thử viết số nhớ phía trên trước khi cộng cột tiếp theo.'); resEl.textContent='Chưa đúng — hãy kiểm tra lại bit nhớ ở cột bên phải rồi thử lại.'; resEl.className='result-msg bad'; }
+});
+
+/* ==================== BƯỚC 6: MẠCH CỘNG 2 BIT ==================== */
+(function(){
+  const wrap = document.getElementById('adderSvgWrap');
+  wrap.innerHTML = `<svg viewBox="0 0 380 210" width="420" aria-label="Mạch cộng hai bit dùng AND và XOR">
+    <text x="8" y="58" class="gate-name-txt" font-size="14">x</text>
+    <text x="8" y="163" class="gate-name-txt" font-size="14">y</text>
+    <line x1="25" y1="54" x2="65" y2="54" class="wire" id="x-source"/>
+    <line x1="65" y1="38" x2="65" y2="126" class="wire" id="x-bus"/>
+    <line x1="65" y1="38" x2="125" y2="38" class="wire" id="x-and"/>
+    <line x1="65" y1="126" x2="125" y2="126" class="wire" id="x-xor"/>
+    <circle cx="65" cy="54" r="4" fill="#94A3B8"/>
+
+    <line x1="25" y1="159" x2="92" y2="159" class="wire" id="y-source"/>
+    <line x1="92" y1="72" x2="92" y2="159" class="wire" id="y-bus"/>
+    <line x1="92" y1="72" x2="125" y2="72" class="wire" id="y-and"/>
+    <line x1="92" y1="159" x2="125" y2="159" class="wire" id="y-xor"/>
+    <circle cx="92" cy="159" r="4" fill="#94A3B8"/>
+
+    <path d="M125,20 L155,20 A35,35 0 0 1 155,90 L125,90 Z" class="gate-shape" id="andshape"/>
+    <text x="143" y="61" class="gate-name-txt" font-size="13">AND</text>
+    <line x1="190" y1="55" x2="280" y2="55" class="wire" id="and-out"/>
+    <circle cx="292" cy="55" r="10" class="lamp lamp-off" id="lampZ"/>
+    <text x="312" y="60" class="gate-name-txt" fill="#F97316" font-size="14">z (nhớ)</text>
+
+    <path d="M125,105 C158,105 184,118 210,143 C184,168 158,181 125,181 C141,160 141,126 125,105 Z" class="gate-shape" id="xorshape"/>
+    <path d="M116,105 C129,126 129,160 116,181" class="gate-shape" id="xorback" style="fill:none;stroke-width:3;"/>
+    <text x="151" y="148" class="gate-name-txt" font-size="13">XOR</text>
+    <line x1="210" y1="143" x2="280" y2="143" class="wire" id="xor-out"/>
+    <circle cx="292" cy="143" r="10" class="lamp lamp-off" id="lampT"/>
+    <text x="312" y="148" class="gate-name-txt" fill="#2563EB" font-size="14">t (kết quả)</text>
+  </svg>`;
+})();
+let adderX=0, adderY=0;
+const adderTried = new Set();
+function renderAdder(recordTrial=true){
+  const z = AND(adderX,adderY), t = XOR(adderX,adderY);
+  const svg = document.getElementById('adderSvgWrap').querySelector('svg');
+  const onIf = (sel,cond)=>{ const el=svg.querySelector(sel); if(el) el.classList.toggle('active',!!cond); };
+  ['#x-source','#x-bus','#x-and','#x-xor'].forEach(sel=>onIf(sel,adderX));
+  ['#y-source','#y-bus','#y-and','#y-xor'].forEach(sel=>onIf(sel,adderY));
+  onIf('#and-out', z); onIf('#xor-out', t);
+  svg.querySelector('#andshape').classList.toggle('on', !!(adderX||adderY));
+  svg.querySelector('#xorshape').classList.toggle('on', !!(adderX||adderY));
+  svg.querySelector('#xorback').classList.toggle('on', !!(adderX||adderY));
+  const lampZ = svg.querySelector('#lampZ'); lampZ.classList.toggle('lamp-on',!!z); lampZ.classList.toggle('lamp-off',!z);
+  const lampT = svg.querySelector('#lampT'); lampT.classList.toggle('lamp-on',!!t); lampT.classList.toggle('lamp-off',!t);
+  document.getElementById('adder-z').textContent=z;
+  document.getElementById('adder-t').textContent=t;
+  document.getElementById('adder-expression').textContent = `${adderX} + ${adderY} = ${adderX+adderY===2?'10':String(adderX+adderY)}`;
+  if(recordTrial){
+    const key = ''+adderX+adderY;
+    if(!adderTried.has(key)) awardXP('adder-'+key, 10, 'Khám phá mạch cộng '+adderX+'+'+adderY, {fixed:true});
+    adderTried.add(key);
+    const tbody = document.getElementById('adder-table-body');
+    let row = tbody.querySelector(`tr[data-row="${key}"]`);
+    if(!row){ row = document.createElement('tr'); row.dataset.row = key; tbody.appendChild(row); }
+    row.innerHTML = `<td>${adderX}</td><td>${adderY}</td><td style="color:#F97316; font-weight:800;">${z}</td><td style="color:#2563EB; font-weight:800;">${t}</td>`;
+    if(adderTried.size>=4) markStepDone(6);
+  }
+}
+document.getElementById('adder-x').addEventListener('click', function(){ adderX = adderX?0:1; this.textContent=adderX; this.classList.toggle('on',!!adderX); renderAdder(true); });
+document.getElementById('adder-y').addEventListener('click', function(){ adderY = adderY?0:1; this.textContent=adderY; this.classList.toggle('on',!!adderY); renderAdder(true); });
+renderAdder(false);
+
+/* ==================== BƯỚC 7: QUIZ ==================== */
+const quizData = [
+ {id:1,type:'mcq',prompt:'RAM dùng để lưu dữ liệu như thế nào?',options:['Tạm thời, mất khi tắt máy','Lâu dài, không mất khi tắt máy','Không lưu được dữ liệu'],correct:0,explain:'RAM là bộ nhớ tạm thời, mất dữ liệu khi tắt nguồn.'},
+ {id:2,type:'tf',prompt:'ROM sẽ mất dữ liệu khi tắt máy tính.',correct:false,explain:'ROM lưu dữ liệu lâu dài, không cần nguồn điện để duy trì.'},
+ {id:3,type:'fill',prompt:'1 AND 1 = ?',correct:'1',explain:'Cổng AND cho kết quả 1 khi cả hai đầu vào đều là 1.'},
+ {id:4,type:'tf',prompt:'CPU có Bộ điều khiển (CU), Bộ số học – logic (ALU) và bộ nhớ tốc độ cao như thanh ghi/cache.',correct:true,explain:'Đúng. CU điều khiển, ALU tính toán; thanh ghi/cache lưu tạm lệnh và dữ liệu đang được CPU xử lí.'},
+ {id:5,type:'mcq',prompt:'Thiết bị nào sau đây thuộc bộ nhớ ngoài?',options:['RAM','ROM','SSD'],correct:2,explain:'SSD là thiết bị lưu trữ ngoài, dữ liệu lâu dài.'},
+ {id:6,type:'fill',prompt:'1 + 1 = ? (nhị phân)',correct:'10',explain:'1+1 trong nhị phân bằng 10 (0, nhớ 1).'},
+ {id:7,type:'mcq',prompt:'Kết quả của 1 XOR 0 là?',options:['0','1'],correct:1,explain:'XOR = 1 khi hai đầu vào khác nhau.'},
+ {id:8,type:'dragmini',prompt:'Kéo thẻ vào đúng nhóm bộ nhớ.',items:[{label:'Lưu tạm thời',bin:'ram'},{label:'Lưu lâu dài',bin:'rom'}],explain:'RAM lưu tạm thời, ROM lưu lâu dài.'},
+ {id:9,type:'simmini',prompt:'Chỉnh công tắc x, y sao cho đèn cổng AND sáng, rồi bấm Xác nhận.',explain:'Đèn AND chỉ sáng khi cả x và y đều bằng 1.'},
+ {id:10,type:'mcq',prompt:'Trong mạch cộng 2 bit, công thức nào đúng?',options:['z = x AND y ,  t = x XOR y','z = x XOR y ,  t = x AND y','z = x OR y ,  t = x AND y'],correct:0,explain:'z (số nhớ) = AND(x,y); t (kết quả) = XOR(x,y).'}
+];
+const userAnswers = new Array(quizData.length).fill(null);
+let quizAttempt = 1;
+function renderQuiz(){
+  const area = document.getElementById('quizArea');
+  area.innerHTML = quizData.map((q,i)=>{
+    let body='';
+    if(q.type==='mcq'){ body = `<div class="opt-list">${q.options.map((o,oi)=>`<div class="opt-item" data-oi="${oi}">${o}</div>`).join('')}</div>`; }
+    else if(q.type==='tf'){ body = `<div class="tf-row"><div class="opt-item" data-val="true">Đúng</div><div class="opt-item" data-val="false">Sai</div></div>`; }
+    else if(q.type==='fill'){ body = `<div class="fill-row"><input type="text" placeholder="Nhập đáp án"></div>`; }
+    else if(q.type==='dragmini'){
+      body = `<div class="mini-bins"><div class="mini-bin" data-bin="ram">RAM</div><div class="mini-bin" data-bin="rom">ROM</div></div>
+      <div class="mini-tray">${q.items.map((it,ii)=>`<div class="tag" style="padding:8px 12px; font-size:13px;" data-ii="${ii}">${it.label}</div>`).join('')}</div>`;
+    } else if(q.type==='simmini'){
+      body = `<div class="switch-row"><div class="switch-block"><div class="switch-label">x</div><button class="switch-btn" data-mx>0</button></div><div class="switch-block"><div class="switch-label">y</div><button class="switch-btn" data-my>0</button></div></div>
+      <div style="text-align:center; margin:10px 0;">Đèn AND: <span data-mlamp style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#CBD5E1; vertical-align:middle;"></span></div>
+      <div style="text-align:center;"><button class="btn btn-ghost btn-sm" data-confirm>XÁC NHẬN</button></div>`;
+    }
+    return `<div class="quiz-q" data-q="${i}" data-type="${q.type}"><div class="qtitle"><span class="qnum">Câu ${i+1}</span>${q.prompt}</div>${body}<div class="quiz-explain" data-explain>${q.explain}</div></div>`;
+  }).join('');
+  area.querySelectorAll('.quiz-q').forEach((qEl,i)=>{
+    const type = qEl.dataset.type;
+    if(type==='mcq'){
+      qEl.querySelectorAll('.opt-item').forEach(opt=>{ opt.addEventListener('click', ()=>{ qEl.querySelectorAll('.opt-item').forEach(o=>o.classList.remove('sel')); opt.classList.add('sel'); userAnswers[i] = parseInt(opt.dataset.oi); }); });
+    } else if(type==='tf'){
+      qEl.querySelectorAll('.opt-item').forEach(opt=>{ opt.addEventListener('click', ()=>{ qEl.querySelectorAll('.opt-item').forEach(o=>o.classList.remove('sel')); opt.classList.add('sel'); userAnswers[i] = (opt.dataset.val==='true'); }); });
+    } else if(type==='fill'){
+      const input = qEl.querySelector('input'); input.addEventListener('input', ()=>{ userAnswers[i] = input.value.trim(); });
+    } else if(type==='dragmini'){
+      const q = quizData[i]; let placedCount=0; const placedArr = new Array(q.items.length).fill(false);
+      qEl.querySelectorAll('.tag').forEach(tagEl=>{
+        makeDraggable(tagEl,(zone,item)=>{
+          if(!zone || !zone.classList.contains('mini-bin')) return;
+          const ii = parseInt(item.dataset.ii); const it = q.items[ii];
+          if(zone.dataset.bin === it.bin){
+            item.classList.add('used'); placedArr[ii]=true;
+            zone.insertAdjacentHTML('beforeend', `<div style="margin-top:6px; background:#F0FDF4; border:1px solid #16A34A; border-radius:6px; padding:3px 6px;">${it.label}</div>`);
+            placedCount++;
+            if(placedCount===q.items.length) userAnswers[i]=true;
+          } else { zone.classList.add('wrong'); setTimeout(()=>zone.classList.remove('wrong'),400); }
+        });
+      });
+      userAnswers[i]=null;
+    } else if(type==='simmini'){
+      let mx=0,my=0;
+      const bx = qEl.querySelector('[data-mx]'), by = qEl.querySelector('[data-my]'), lamp=qEl.querySelector('[data-mlamp]');
+      function upd(){ const out = AND(mx,my); lamp.style.background = out? '#FDE047':'#CBD5E1'; lamp.style.boxShadow = out? '0 0 8px #FACC15':'none'; }
+      bx.addEventListener('click', ()=>{mx=mx?0:1; bx.textContent=mx; bx.classList.toggle('on',!!mx); upd();});
+      by.addEventListener('click', ()=>{my=my?0:1; by.textContent=my; by.classList.toggle('on',!!my); upd();});
+      qEl.querySelector('[data-confirm]').addEventListener('click', ()=>{ userAnswers[i] = (mx===1 && my===1); qEl.querySelector('[data-confirm]').textContent = 'Đã xác nhận ✓'; });
+      userAnswers[i]=null;
+    }
+  });
+}
+renderQuiz();
+function gradeQuiz(){
+  let score=0;
+  quizData.forEach((q,i)=>{
+    const qEl = document.querySelector(`.quiz-q[data-q="${i}"]`);
+    let correct=false; const ans = userAnswers[i];
+    if(q.type==='mcq') correct = (ans===q.correct);
+    else if(q.type==='tf') correct = (ans===q.correct);
+    else if(q.type==='fill') correct = ans && ans.toLowerCase()===q.correct.toLowerCase();
+    else if(q.type==='dragmini') correct = ans===true;
+    else if(q.type==='simmini') correct = ans===true;
+    if(correct) score++;
+    qEl.dataset.correct = correct ? '1':'0';
+    if(q.type==='mcq'){ qEl.querySelectorAll('.opt-item').forEach((o,oi)=>{ if(oi===q.correct) o.classList.add('correctans'); else if(o.classList.contains('sel')) o.classList.add('wrongans'); }); }
+    else if(q.type==='tf'){ qEl.querySelectorAll('.opt-item').forEach(o=>{ const val = (o.dataset.val==='true'); if(val===q.correct) o.classList.add('correctans'); else if(o.classList.contains('sel')) o.classList.add('wrongans'); }); }
+    qEl.querySelector('[data-explain]').classList.add('show');
+  });
+  return score;
+}
+document.getElementById('quizSubmit').addEventListener('click', ()=>{
+  const firstMissing = userAnswers.findIndex(a=>a===null || a===undefined || a==='');
+  if(firstMissing!==-1){
+    const qEl=document.querySelector(`.quiz-q[data-q="${firstMissing}"]`);
+    document.getElementById('quizResultArea').innerHTML='<div class="callout" style="border-left-color:var(--orange);background:#FFF7ED;">⚠️ Hãy hoàn thành đủ 10 câu trước khi nộp bài.</div>';
+    qEl.scrollIntoView({behavior:'smooth',block:'center'});
+    qEl.classList.add('pulse'); setTimeout(()=>qEl.classList.remove('pulse'),700);
+    return;
+  }
+  const score = gradeQuiz();
+  quizData.forEach((q,i)=>{
+    const qEl=document.querySelector(`.quiz-q[data-q="${i}"]`);
+    if(qEl && qEl.dataset.correct==='1' && !xpState.awarded.has('quiz-q'+i)){
+      xpState.attempts['quiz-q'+i]=quizAttempt;
+      awardXP('quiz-q'+i, 20, 'Quiz câu '+(i+1));
+    }
+  });
+  if(score<10) showXPToast('🌱 Quiz lần '+quizAttempt+': '+score+'/10', 'Những câu sai là bản đồ chỉ ra nơi cần luyện thêm. Làm lại để cải thiện — XP lần sau được tính theo hệ số.', true);
+  window.__lastQuizScore = score;
+  saveCheckpoint('QUIZ_SUBMITTED');
+  let remark;
+  if(score<=4) remark='Cần luyện tập thêm.';
+  else if(score<=7) remark='Bạn đã nắm được kiến thức cơ bản.';
+  else if(score<=9) remark='Rất tốt!';
+  else remark='Xuất sắc – Bạn đã làm chủ Bài 4!';
+  document.getElementById('quizResultArea').innerHTML = `<div class="card score-box">
+      <div class="num">${score} / 10</div><div class="remark">${remark}</div>
+      <div style="margin-top:8px;color:var(--muted);font-size:13px;font-weight:700;">Lượt làm quiz: ${quizAttempt} · XP cho câu mới làm đúng: ${xpRatePct(quizAttempt)}%</div>
+      <div class="quiz-actions"><button class="btn btn-secondary" id="quizRedo">LÀM LẠI</button><button class="btn btn-orange" id="quizWrong">XEM NHỮNG CÂU SAI</button></div>
+      <div id="wrongList" style="text-align:left; margin-top:18px;"></div></div>`;
+  document.getElementById('quizSubmit').style.display='none';
+  markStepDone(7);
+  document.getElementById('quizRedo').addEventListener('click', ()=>{
+    quizAttempt++;
+    userAnswers.fill(null);
+    stepDone[7]=false; updateTopbar(); updateBottomNav();
+    document.getElementById('quizResultArea').innerHTML='';
+    document.getElementById('quizSubmit').style.display='inline-block';
+    renderQuiz();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+  document.getElementById('quizWrong').addEventListener('click', ()=>{
+    const wrongEl = document.getElementById('wrongList');
+    const wrongs = quizData.filter((q,i)=>document.querySelector(`.quiz-q[data-q="${i}"]`).dataset.correct==='0');
+    if(wrongs.length===0){ wrongEl.innerHTML = '<p style="text-align:center; color:var(--green); font-weight:700;">Không có câu nào sai — tuyệt vời!</p>'; return; }
+    wrongEl.innerHTML = wrongs.map(q=>`<div style="border-left:3px solid var(--red); padding:8px 12px; margin-bottom:8px; background:#FEF2F2; border-radius:8px;"><b>${q.prompt}</b><br><span style="font-size:13px; color:var(--muted);">${q.explain}</span></div>`).join('');
+  });
+});
+
+
+/* ==================== EXIT TICKET ==================== */
+function escapeHtml(str){
+  return String(str??'').replace(/[&<>"]/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+function buildExitTicketText(){
+  const score = window.__lastQuizScore!==undefined ? window.__lastQuizScore+'/10' : 'Chưa có';
+  return [
+    'EXIT TICKET — BÀI 4: BÊN TRONG MÁY TÍNH',
+    'Môn: Tin học 11',
+    'Giáo viên: Huỳnh Văn Diễn',
+    '',
+    'Học sinh: '+studentName,
+    'Lớp: '+studentClass,
+    'Điểm Quiz: '+score,
+    'XP tích lũy: '+xpState.total+' XP',
+    '',
+    '1. Hiểu rõ nhất: '+exitTicket.strong,
+    '2. Muốn luyện thêm: '+exitTicket.practice,
+    '3. Mức độ tự tin: '+exitTicket.confidence+'/5',
+    '4. Điều học được từ việc thử sai: '+exitTicket.reflection,
+    '',
+    'Thông điệp: Tiến bộ đến từ thử → nhận phản hồi → điều chỉnh → thử lại.'
+  ].join('\n');
+}
+function downloadExitTicket(){
+  if(!exitTicket.submitted){
+    showXPToast('🎫 Chưa có Exit Ticket', 'Hãy hoàn thành và nộp Exit Ticket trước.', true);
+    return;
+  }
+  const blob = new Blob([buildExitTicketText()], {type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  const safe=(studentName||'hoc-sinh').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_');
+  a.href=url; a.download=`Exit_Ticket_Bai4_${safe}_${studentClass||'lop'}.txt`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+
+document.querySelectorAll('.conf-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    exitTicket.confidence=parseInt(btn.dataset.conf,10);
+    document.querySelectorAll('.conf-btn').forEach(b=>b.classList.toggle('sel', b===btn));
+  });
+});
+const exitReflectionEl=document.getElementById('exitReflection');
+if(exitReflectionEl){
+  exitReflectionEl.addEventListener('input', ()=>{ document.getElementById('exitCount').textContent=exitReflectionEl.value.length; });
+}
+const exitSubmitBtn=document.getElementById('exitSubmit');
+if(exitSubmitBtn){
+  exitSubmitBtn.addEventListener('click', ()=>{
+    const strong=document.getElementById('exitStrong').value.trim();
+    const practice=document.getElementById('exitPractice').value.trim();
+    const reflection=document.getElementById('exitReflection').value.trim();
+    const fb=document.getElementById('exitFeedback');
+    if(!strong || !practice || !exitTicket.confidence || reflection.length<8){
+      fb.className='exit-feedback bad';
+      fb.textContent='Hãy chọn đủ 3 mục và viết ít nhất một câu ngắn (từ 8 ký tự) ở phần phản tư.';
+      showXPToast('🌱 Phản tư chưa hoàn tất', 'Exit Ticket không chấm đúng/sai — chỉ cần em trả lời thật và đủ.', true);
+      return;
+    }
+    exitTicket.strong=strong; exitTicket.practice=practice; exitTicket.reflection=reflection; exitTicket.submitted=true;
+    fb.className='exit-feedback ok'; fb.textContent='Đã nộp Exit Ticket. Cảm ơn em đã phản tư về cách học của mình!';
+    document.getElementById('exitSummary').style.display='block';
+    document.getElementById('exitSummary').innerHTML=`<div class="exit-summary"><h3>🎫 Phiếu ra về của ${escapeHtml(studentName)}</h3><div class="row"><b>Hiểu rõ nhất:</b> ${escapeHtml(strong)}</div><div class="row"><b>Muốn luyện thêm:</b> ${escapeHtml(practice)}</div><div class="row"><b>Tự tin:</b> ${exitTicket.confidence}/5</div><div class="row"><b>Điều học được từ thử sai:</b> ${escapeHtml(reflection)}</div><div style="margin-top:10px;"><span class="exit-badge">✓ Đã hoàn thành Exit Ticket</span></div></div>`;
+    document.getElementById('exitDownload').style.display='inline-block';
+    exitSubmitBtn.disabled=true; document.getElementById('exitStrong').disabled=true; document.getElementById('exitPractice').disabled=true; document.getElementById('exitReflection').disabled=true; document.querySelectorAll('.conf-btn').forEach(b=>b.disabled=true);
+    awardXP('exit-ticket',30,'Exit Ticket · phản tư',{fixed:true});
+    markStepDone(8);
+    setGasStatus('☁️ Đang lưu kết quả lên Google Sheets…','saving');
+    gasCall('saveStudentResult',[buildSubmissionPayload('COMPLETE')],res=>{
+      setGasStatus('✅ Đã đồng bộ kết quả lên Google Sheets.','ok');
+    },err=>{
+      setGasStatus('⚠️ Chưa đồng bộ được. Kết quả vẫn còn trên máy; hãy kiểm tra kết nối và thử lại.','bad');
+      const retry=document.createElement('button'); retry.className='btn btn-ghost btn-sm'; retry.textContent='↻ THỬ ĐỒNG BỘ LẠI'; retry.style.margin='8px auto 0'; retry.style.display='block';
+      retry.addEventListener('click',()=>{ retry.remove(); setGasStatus('☁️ Đang thử đồng bộ lại…','saving'); gasCall('saveStudentResult',[buildSubmissionPayload('COMPLETE')],()=>setGasStatus('✅ Đã đồng bộ kết quả lên Google Sheets.','ok'),()=>setGasStatus('⚠️ Vẫn chưa đồng bộ được.','bad')); });
+      document.getElementById('gasSyncStatus')?.after(retry);
+    });
+  });
+}
+const exitDownloadBtn=document.getElementById('exitDownload'); if(exitDownloadBtn) exitDownloadBtn.addEventListener('click',downloadExitTicket);
+const finalExitDownloadBtn=document.getElementById('finalExitDownload'); if(finalExitDownloadBtn) finalExitDownloadBtn.addEventListener('click',downloadExitTicket);
+
+/* ==================== TEACHER DATA — GOOGLE SHEETS ==================== */
+function escapeCell(v){ return escapeHtml(String(v??'')); }
+function loadTeacherResults(){
+  const box=document.getElementById('teacherDataTable'), st=document.getElementById('teacherDataStatus');
+  if(!teacherToken){ st.textContent='Cần xác thực Teacher Mode.'; return; }
+  st.textContent='Đang tải dữ liệu…';
+  gasCall('getRecentResults',[teacherToken,60],res=>{
+    st.textContent='';
+    document.getElementById('teacherDataRefresh').style.display='inline-block';
+    box.classList.add('show');
+    const rows=(res&&res.rows)||[];
+    if(!rows.length){ box.innerHTML='<div class="teacher-data-empty">Chưa có bài nộp nào.</div>'; return; }
+    box.innerHTML=`<table><thead><tr><th>Thời gian</th><th>Học sinh</th><th>Lớp</th><th>Quiz</th><th>XP</th><th>Tự tin</th><th>Muốn luyện thêm</th><th>Trạng thái</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${escapeCell(r.time)}</td><td><b>${escapeCell(r.name)}</b></td><td>${escapeCell(r.className)}</td><td>${escapeCell(r.quizScore)}</td><td>${escapeCell(r.xp)}</td><td>${escapeCell(r.confidence)}</td><td>${escapeCell(r.practice)}</td><td>${escapeCell(r.status)}</td></tr>`).join('')}</tbody></table>`;
+  },e=>{ st.textContent='Không tải được dữ liệu. Phiên Teacher Mode có thể đã hết hạn.'; });
+}
+document.getElementById('teacherDataBtn')?.addEventListener('click',loadTeacherResults);
+document.getElementById('teacherDataRefresh')?.addEventListener('click',loadTeacherResults);
+
+updateTopbar();
+updateXPUI();
+</script>
+</body>
+</html>
